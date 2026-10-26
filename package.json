@@ -1,0 +1,22 @@
+{
+  "name": "studioradar",
+  "version": "1.0.0",
+  "description": "StudioRadar B2B Lead Generator - Fullstack (Node.js + React)",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev.js",
+    "start": "node dev.js",
+    "backend": "npm start --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "auth:tg": "npm run auth:tg --prefix backend"
+  },
+  "keywords": [
+    "leadgen",
+    "b2b",
+    "motion-design",
+    "3d",
+    "scraper"
+  ],
+  "author": "",
+  "license": "ISC"
+}
