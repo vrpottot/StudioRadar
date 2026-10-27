@@ -200,6 +200,53 @@ app.post('/api/ai/hunt', async (req, res) => {
   }
 });
 
+// 8.1. Сканирование Telegram каналов
+app.post('/api/scan/telegram', async (req, res) => {
+  try {
+    let totalAdded = 0;
+    const channels = DEFAULT_MONITORED_CHANNELS;
+
+    for (const channel of channels) {
+      broadcast({ type: 'ai_progress', message: `Сканирование Telegram: @${channel}...` });
+      try {
+        const leads = await scrapePublicTelegramChannel(channel, 20);
+        for (const lead of leads) {
+          const added = await db.addLead(lead);
+          if (added) {
+            totalAdded++;
+            broadcast({
+              type: 'new_lead_detected',
+              lead: {
+                id: added.id,
+                company: added.company,
+                industry: added.industry,
+                phone: added.phone,
+                service: added.service,
+                source: added.source
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.warn(`[Scan TG] Ошибка канала @${channel}:`, err.message);
+      }
+    }
+
+    broadcast({ type: 'ai_progress', message: `Сбор из Telegram завершен. Найдено новых: ${totalAdded}` });
+    setTimeout(() => broadcast({ type: 'ai_progress', message: '' }), 5000);
+
+    res.json({
+      success: true,
+      new_leads_found: totalAdded,
+      message: totalAdded > 0 
+        ? `Найдено ${totalAdded} новых заказов из Telegram!` 
+        : 'Все актуальные заказы из Telegram-каналов уже в базе'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 9. Общее сканирование всех площадок (HeadHunter + Telegram)
 app.post('/api/scan', async (req, res) => {
   let totalAdded = 0;

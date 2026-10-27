@@ -4,30 +4,45 @@ import Header from './components/Header';
 import StatsCards from './components/StatsCards';
 import LeadTable from './components/LeadTable';
 import LeadDrawer from './components/LeadDrawer';
+import OverviewView from './components/OverviewView';
+import PipelinesView from './components/PipelinesView';
+import PipelineBuilderModal from './components/PipelineBuilderModal';
+import SignalsView from './components/SignalsView';
+import SourcesView from './components/SourcesView';
+import SettingsView from './components/SettingsView';
+import { getSavedPipelines, savePipelines } from './data/pipelinesData';
 
 const API_BASE = "http://127.0.0.1:8001";
 
 export default function App() {
+  const [activeView, setActiveView] = useState('leads'); // 'overview' | 'pipelines' | 'leads' | 'signals' | 'sources' | 'settings'
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Пайплайны
+  const [pipelines, setPipelines] = useState(() => getSavedPipelines());
+  const [isPipelineBuilderOpen, setIsPipelineBuilderOpen] = useState(false);
+
+  // Фильтры лидов
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'in_progress' | 'closed'
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedIndustry, setSelectedIndustry] = useState('Все сферы');
   const [selectedService, setSelectedService] = useState('Все услуги');
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyWithPhone, setOnlyWithPhone] = useState(false);
+
+  // Статусы сканеров
   const [isAiHunting, setIsAiHunting] = useState(false);
   const [isHhScanning, setIsHhScanning] = useState(false);
+  const [isTgScanning, setIsTgScanning] = useState(false);
   const [aiProgressMessage, setAiProgressMessage] = useState('');
 
-  // Функция загрузки лидов с бэкенда
+  // Загрузка лидов с бэкенда
   const fetchBackendLeads = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/leads`);
       if (res.ok) {
         const data = await res.json();
-        // Берем строго реальные лиды с hh или tg
         const formatted = data
           .filter(item => !item.id.startsWith('lead-'))
           .map(item => ({
@@ -62,14 +77,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Принудительно очищаем старый кэш браузера от демо-лидов
     try {
       localStorage.removeItem('studioradar_leads');
     } catch (e) {}
 
     fetchBackendLeads();
 
-    // Подключение WebSocket для моментального реалтайм обновления
+    // WebSocket для моментального реалтайм обновления
     let ws;
     try {
       ws = new WebSocket("ws://127.0.0.1:8001/ws/leads");
@@ -91,7 +105,7 @@ export default function App() {
     };
   }, []);
 
-  // Handle Status Update
+  // Управление статусом лида
   const handleStatusChange = async (leadId, newStatus) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
     if (selectedLead && selectedLead.id === leadId) {
@@ -107,7 +121,7 @@ export default function App() {
     } catch (err) {}
   };
 
-  // Handle Note Update
+  // Управление заметками
   const handleSaveNote = async (leadId, noteText) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, notes: noteText } : l));
     if (selectedLead && selectedLead.id === leadId) {
@@ -123,7 +137,7 @@ export default function App() {
     } catch (err) {}
   };
 
-  // 1. Автономный поиск заказов через ИИ-Ассистента (Gemini + Web)
+  // Сканирование ИИ
   const handleAiHunt = async () => {
     if (isAiHunting) return;
     setIsAiHunting(true);
@@ -144,7 +158,7 @@ export default function App() {
     }
   };
 
-  // 2. Сбор вакансий-проектов с HeadHunter
+  // Сканирование HeadHunter
   const handleHhScan = async () => {
     if (isHhScanning) return;
     setIsHhScanning(true);
@@ -165,9 +179,86 @@ export default function App() {
     }
   };
 
-  // Filtered Leads
+  // Сканирование Telegram
+  const handleTgScan = async () => {
+    if (isTgScanning) return;
+    setIsTgScanning(true);
+    setAiProgressMessage("Сканирование CG и дизайн Telegram каналов...");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/scan/telegram`, { method: "POST" });
+      const data = await res.json();
+      await fetchBackendLeads();
+      setAiProgressMessage(data.message || "Сбор из Telegram завершен.");
+      setTimeout(() => setAiProgressMessage(''), 6000);
+    } catch (err) {
+      console.warn("Ошибка сканирования TG:", err);
+      setAiProgressMessage("Ошибка при сборе из Telegram");
+      setTimeout(() => setAiProgressMessage(''), 5000);
+    } finally {
+      setIsTgScanning(false);
+    }
+  };
+
+  // Управление пайплайнами
+  const handleTogglePipelineStatus = (pipeId) => {
+    setPipelines(prev => {
+      const updated = prev.map(p => {
+        if (p.id === pipeId) {
+          const nextStatus = p.status === 'active' ? 'paused' : 'active';
+          return { ...p, status: nextStatus };
+        }
+        return p;
+      });
+      savePipelines(updated);
+      return updated;
+    });
+  };
+
+  const handleRunPipeline = (pipeId) => {
+    const pipe = pipelines.find(p => p.id === pipeId);
+    setAiProgressMessage(`Запущен пайплайн «${pipe?.name || ''}»...`);
+    handleAiHunt();
+  };
+
+  const handleDeletePipeline = (pipeId) => {
+    if (confirm("Вы уверены, что хотите удалить эту стратегию поиска?")) {
+      setPipelines(prev => {
+        const updated = prev.filter(p => p.id !== pipeId);
+        savePipelines(updated);
+        return updated;
+      });
+    }
+  };
+
+  const handleDuplicatePipeline = (pipeId) => {
+    const pipe = pipelines.find(p => p.id === pipeId);
+    if (!pipe) return;
+    const duplicated = {
+      ...pipe,
+      id: `pipe_${Date.now()}`,
+      name: `${pipe.name} (Копия)`,
+      lastRunAt: "Еще не запускался"
+    };
+    setPipelines(prev => {
+      const updated = [duplicated, ...prev];
+      savePipelines(updated);
+      return updated;
+    });
+  };
+
+  const handleSaveNewPipeline = (newPipe) => {
+    setPipelines(prev => {
+      const updated = [newPipe, ...prev];
+      savePipelines(updated);
+      return updated;
+    });
+    setAiProgressMessage(`Пайплайн «${newPipe.name}» успешно создан и активирован!`);
+    setTimeout(() => setAiProgressMessage(''), 6000);
+  };
+
+  // Фильтрация лидов для экрана "Лиды"
   const filteredLeads = leads.filter(lead => {
-    // Search
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const match = 
@@ -179,7 +270,6 @@ export default function App() {
       if (!match) return false;
     }
 
-    // Status filter
     if (filterStatus === 'in_progress') {
       if (lead.status !== 'in_progress' && lead.status !== 'called' && lead.status !== 'negotiation') {
         return false;
@@ -190,17 +280,14 @@ export default function App() {
       }
     }
 
-    // Industry
     if (selectedIndustry !== "Все сферы" && selectedIndustry !== "Все 7 сфер" && lead.industry !== selectedIndustry) {
       return false;
     }
 
-    // Service
     if (selectedService !== "Все услуги" && lead.service !== selectedService) {
       return false;
     }
 
-    // Phone filter
     if (onlyWithPhone && !lead.phone) {
       return false;
     }
@@ -208,13 +295,15 @@ export default function App() {
     return true;
   });
 
-  const phoneLeadsCount = leads.filter(l => l.phone).length;
-  const inProgressCount = leads.filter(l => l.status === 'in_progress' || l.status === 'called' || l.status === 'negotiation').length;
+  const phoneLeadsCount = leads.filter(l => Boolean(l.phone)).length;
+  const inProgressCount = leads.filter(l => ['in_progress', 'called', 'negotiation'].includes(l.status)).length;
 
   return (
     <div className="app-container">
-      {/* Sidebar */}
+      {/* Sidebar с полной навигацией по ТЗ */}
       <Sidebar 
+        activeView={activeView}
+        setActiveView={setActiveView}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
         onlyWithPhone={onlyWithPhone}
@@ -222,6 +311,7 @@ export default function App() {
         leadsCount={leads.length}
         phoneLeadsCount={phoneLeadsCount}
         inProgressCount={inProgressCount}
+        pipelinesCount={pipelines.length}
       />
 
       {/* Main Content Area */}
@@ -231,32 +321,91 @@ export default function App() {
           isAiHunting={isAiHunting}
           onHhScan={handleHhScan}
           isHhScanning={isHhScanning}
+          onTgScan={handleTgScan}
+          isTgScanning={isTgScanning}
           leadsCount={leads.length}
           aiProgressMessage={aiProgressMessage}
         />
 
         <div className="content-body">
-          {/* Stats Overview */}
-          <StatsCards leads={leads} />
+          {/* 1. ЭКРАН "ОБЗОР" (Раздел 13.3 ТЗ) */}
+          {activeView === 'overview' && (
+            <OverviewView 
+              leads={leads}
+              pipelines={pipelines}
+              onNavigateToLeads={() => setActiveView('leads')}
+              onNavigateToPipelines={() => setActiveView('pipelines')}
+              onSelectLead={setSelectedLead}
+              onCreatePipeline={() => setIsPipelineBuilderOpen(true)}
+            />
+          )}
 
-          {/* Table with Leads */}
-          <LeadTable 
-            leads={filteredLeads}
-            onSelectLead={setSelectedLead}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedIndustry={selectedIndustry}
-            setSelectedIndustry={setSelectedIndustry}
-            selectedService={selectedService}
-            setSelectedService={setSelectedService}
-            onlyWithPhone={onlyWithPhone}
-            setOnlyWithPhone={setOnlyWithPhone}
-            onStatusChange={handleStatusChange}
-          />
+          {/* 2. ЭКРАН "ПАЙПЛАЙНЫ" (Раздел 13.4 ТЗ) */}
+          {activeView === 'pipelines' && (
+            <PipelinesView 
+              pipelines={pipelines}
+              onTogglePipelineStatus={handleTogglePipelineStatus}
+              onRunPipeline={handleRunPipeline}
+              onDeletePipeline={handleDeletePipeline}
+              onDuplicatePipeline={handleDuplicatePipeline}
+              onCreatePipeline={() => setIsPipelineBuilderOpen(true)}
+            />
+          )}
+
+          {/* 3. ЭКРАН "ЛИДЫ" (Раздел 9 и 13.7 ТЗ) */}
+          {activeView === 'leads' && (
+            <>
+              <StatsCards leads={leads} />
+              <LeadTable 
+                leads={filteredLeads}
+                onSelectLead={setSelectedLead}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedIndustry={selectedIndustry}
+                setSelectedIndustry={setSelectedIndustry}
+                selectedService={selectedService}
+                setSelectedService={setSelectedService}
+                onlyWithPhone={onlyWithPhone}
+                setOnlyWithPhone={setOnlyWithPhone}
+                onStatusChange={handleStatusChange}
+              />
+            </>
+          )}
+
+          {/* 4. ЭКРАН "КАТАЛОГ СИГНАЛОВ" (Раздел 4 и 13.6 ТЗ) */}
+          {activeView === 'signals' && (
+            <SignalsView 
+              onCreatePipeline={() => setIsPipelineBuilderOpen(true)}
+            />
+          )}
+
+          {/* 5. ЭКРАН "ИСТОЧНИКИ ДАННЫХ" (Раздел 5 и 13.8 ТЗ) */}
+          {activeView === 'sources' && (
+            <SourcesView 
+              onHhScan={handleHhScan}
+              isHhScanning={isHhScanning}
+              onTgScan={handleTgScan}
+              isTgScanning={isTgScanning}
+              onAiHunt={handleAiHunt}
+              isAiHunting={isAiHunting}
+            />
+          )}
+
+          {/* 6. ЭКРАН "НАСТРОЙКИ" (Раздел 13.2 и 16 ТЗ) */}
+          {activeView === 'settings' && (
+            <SettingsView />
+          )}
         </div>
       </div>
 
-      {/* Lead Detail Drawer */}
+      {/* Модальное окно создания пайплайна (5 шагов по Разделу 3.1 ТЗ) */}
+      <PipelineBuilderModal 
+        isOpen={isPipelineBuilderOpen}
+        onClose={() => setIsPipelineBuilderOpen(false)}
+        onSavePipeline={handleSaveNewPipeline}
+      />
+
+      {/* Карточка компании (Lead Drawer, Раздел 8 ТЗ) */}
       {selectedLead && (
         <LeadDrawer 
           lead={selectedLead}

@@ -3,16 +3,30 @@ import * as cheerio from 'cheerio';
 import { checkSpamFilters, classifyIndustry, classifyService, generateSuggestedSolution } from './classifier.js';
 import { extractPhoneFromText, extractPhoneFromWebsite } from './phoneExtractor.js';
 import { analyzeLeadWithAi } from './geminiService.js';
+import { DEFAULT_MONITORED_CHANNELS } from './config.js';
 
 export async function scrapePublicTelegramChannel(channelName, limit = 30) {
-  const cleanChannel = channelName.trim().replace(/^https?:\/\/t\.me\/(s\/)?/, '').replace('@', '');
+  const cleanChannel = channelName.trim()
+    .replace(/^https?:\/\/t\.me\/(s\/)?/, '')
+    .replace(/^https?:\/\/web\.telegram\.org\/k\/#@?/, '')
+    .replace(/^@/, '')
+    .replace(/\/$/, '');
+
+  // Приватные инвайт-ссылки не поддерживают веб-превью t.me/s/ (требуют MTProto-клиента)
+  if (cleanChannel.startsWith('+') || cleanChannel.includes('joinchat')) {
+    console.log(`[Telegram Web] @${cleanChannel} — закрытый чат по инвайт-ссылке. Для чтения требуется GramJS-сессия (npm run auth:tg).`);
+    return [];
+  }
+
   const url = `https://t.me/s/${cleanChannel}`;
 
   try {
     const resp = await axios.get(url, {
       timeout: 10000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8'
       }
     });
 
@@ -125,4 +139,21 @@ export async function scrapePublicTelegramChannel(channelName, limit = 30) {
     console.error(`[Telegram Web] Ошибка парсинга @${cleanChannel}:`, e.message);
     return [];
   }
+}
+
+/**
+ * Сканирование всех подключенных Telegram каналов
+ */
+export async function scrapeAllTelegramChannels(channels = DEFAULT_MONITORED_CHANNELS, onProgress = null) {
+  const allLeads = [];
+  for (const ch of channels) {
+    if (onProgress) onProgress(`Сканирование Telegram: @${ch}...`);
+    try {
+      const leads = await scrapePublicTelegramChannel(ch, 20);
+      allLeads.push(...leads);
+    } catch (e) {
+      console.warn(`[Telegram Scraper] Ошибка в @${ch}:`, e.message);
+    }
+  }
+  return allLeads;
 }

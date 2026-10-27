@@ -29,5 +29,67 @@ export const LEAD_STATUSES = [
   { id: "rejected", label: "Не подходит", color: "bg-rose-500/15 text-rose-400 border-rose-500/30" }
 ];
 
+// Уровни приоритета по п. 7.4 ТЗ (A+, A, B, C, D, E)
+export const LEAD_GRADES = {
+  "A+": {
+    label: "A+",
+    name: "Исключительно высокий",
+    minScore: 90,
+    badgeBg: "var(--accent-emerald-subtle)",
+    badgeText: "var(--color-accent-green-text)",
+    badgeBorder: "var(--color-accent-green)"
+  },
+  "A": {
+    label: "A",
+    name: "Высокий приоритет",
+    minScore: 75,
+    badgeBg: "#f3effb",
+    badgeText: "var(--color-accent-purple)",
+    badgeBorder: "var(--color-accent-lavender)"
+  },
+  "B": {
+    label: "B",
+    name: "Перспективный",
+    minScore: 60,
+    badgeBg: "#e7eef6",
+    badgeText: "#1e3a5f",
+    badgeBorder: "#cde0f1"
+  },
+  "C": {
+    label: "C",
+    name: "Средний",
+    minScore: 45,
+    badgeBg: "#fdf0e6",
+    badgeText: "#7b3306",
+    badgeBorder: "#f4e6d7"
+  },
+  "D": {
+    label: "D",
+    name: "Низкий",
+    minScore: 30,
+    badgeBg: "#f8f7f4",
+    badgeText: "#727272",
+    badgeBorder: "#e8e5dc"
+  },
+  "E": {
+    label: "E",
+    name: "Отклонен",
+    minScore: 0,
+    badgeBg: "#f6c9c0",
+    badgeText: "#6b0c26",
+    badgeBorder: "#f1b3a7"
+  }
+};
+
+export function getLeadGrade(score) {
+  const num = Number(score) || 0;
+  if (num >= 90) return "A+";
+  if (num >= 75) return "A";
+  if (num >= 60) return "B";
+  if (num >= 45) return "C";
+  if (num >= 30) return "D";
+  return "E";
+}
+
 export const INITIAL_LEADS = [];
 export const REALTIME_NEW_POOL = [];

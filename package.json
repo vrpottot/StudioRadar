@@ -4,9 +4,9 @@
   "description": "StudioRadar B2B Lead Generator - Fullstack (Node.js + React)",
   "type": "module",
   "scripts": {
-    "dev": "node dev.js",
-    "start": "node dev.js",
-    "backend": "npm start --prefix backend",
+    "dev": "concurrently -n \"backend,frontend\" -c \"magenta,cyan\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "start": "concurrently -n \"backend,frontend\" -c \"magenta,cyan\" \"npm start --prefix backend\" \"npm run dev --prefix frontend\"",
+    "backend": "npm run dev --prefix backend",
     "frontend": "npm run dev --prefix frontend",
     "auth:tg": "npm run auth:tg --prefix backend"
   },
@@ -18,5 +18,8 @@
     "scraper"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

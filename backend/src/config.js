@@ -30,14 +30,31 @@ export const TARGET_SERVICES = [
   "3D Web-приложения и интерактив"
 ];
 
-// Каналы для мониторинга
+// Каналы и чаты для мониторинга (по ТЗ и запросу заказчика)
 export const DEFAULT_MONITORED_CHANNELS = [
-  "motionhunter",        // Упомянут заказчиком
-  "cgfreelance",         // Упомянут заказчиком
-  "cmo_russia",          // Директора по маркетингу
-  "marketing_brands_ru", // Прямые B2B запросы
-  "tender_creatives",    // B2B закупки
-  "ecom_brands_hub"      // E-commerce бренды
+  "brickspacer_career",  // Карьера и 3D/CGI проекты студии Brickspacer
+  "designerworkchat",    // Чат работы и заказов для дизайнеров
+  "CGWorkHub",           // CG Work Hub (компьютерная графика, 3D, моушен)
+  "jetlagchat",          // Чат продакшна Jetlag (видео, съёмки, моушен)
+  "cidjin_chat",         // Чат CG/3D сообщества Сиджин
+  "desgangchat",         // Чат сообщества Desgang (дизайн, моушен)
+  "aivacancychannel",    // Канал вакансий и заказов в сфере нейросетей и AI
+  "motionhunter",        // Моушен-хантер заказы
+  "cgfreelance"          // CG заказы и фриланс
+];
+
+// Полный перечень источников с метаданными и ссылками
+export const MONITORED_TELEGRAM_SOURCES = [
+  { id: "brickspacer_career", url: "https://t.me/brickspacer_career", name: "Brickspacer Career", type: "channel" },
+  { id: "designerworkchat", url: "https://t.me/designerworkchat", name: "Designer Work Chat", type: "chat" },
+  { id: "CGWorkHub", url: "https://t.me/CGWorkHub", name: "CG Work Hub", type: "channel" },
+  { id: "+R_KxUQG5hYo5ZjAy", url: "https://t.me/+R_KxUQG5hYo5ZjAy", name: "CG Private Community", type: "private_invite" },
+  { id: "jetlagchat", url: "https://t.me/jetlagchat", name: "Jetlag Production Chat", type: "chat" },
+  { id: "cidjin_chat", url: "https://t.me/cidjin_chat", name: "Сиджин CG Chat", type: "chat" },
+  { id: "desgangchat", url: "https://t.me/desgangchat", name: "Desgang Community", type: "chat" },
+  { id: "aivacancychannel", url: "https://t.me/aivacancychannel", name: "AI Vacancy Channel", type: "channel" },
+  { id: "motionhunter", url: "https://t.me/motionhunter", name: "Motion Hunter", type: "channel" },
+  { id: "cgfreelance", url: "https://t.me/cgfreelance", name: "CG Freelance & Orders", type: "channel" }
 ];
 
 // Жесткие стоп-слова (отсев по ТЗ)

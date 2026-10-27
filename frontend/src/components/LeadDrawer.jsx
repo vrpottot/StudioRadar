@@ -52,7 +52,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
         <div style={{ 
           padding: '24px', 
           borderBottom: '1px solid var(--border-subtle)', 
-          background: '#ffffff',
+          background: 'var(--color-surface-white)',
           display: 'flex', 
           alignItems: 'flex-start', 
           justifyContent: 'space-between',
@@ -69,10 +69,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                 Match: {lead.score}%
               </span>
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-black)', letterSpacing: '-0.02em' }}>
               {lead.company}
             </h2>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-headline)', marginTop: '2px' }}>
               {lead.industry} • {lead.source}
             </div>
           </div>
@@ -80,12 +80,12 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           <button 
             onClick={onClose}
             style={{ 
-              background: '#f1f5f9', 
+              background: 'var(--color-surface-beige-3)', 
               border: 'none', 
-              color: '#64748b', 
+              color: 'var(--color-text-headline)', 
               width: '32px', 
               height: '32px', 
-              borderRadius: '8px', 
+              borderRadius: '6px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
@@ -97,24 +97,24 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
         </div>
 
         {/* Body */}
-        <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
           {/* Quick Actions (Call & TG) */}
           <div style={{ 
-            background: 'linear-gradient(135deg, #f0fdf4, #faf5ff)', 
-            border: '1px solid #bbf7d0', 
-            borderRadius: '16px', 
+            background: 'var(--color-surface-beige-1)', 
+            border: '1px solid var(--border-medium)', 
+            borderRadius: '12px', 
             padding: '18px' 
           }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: '#166534', marginBottom: '10px', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-accent-purple)', marginBottom: '10px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               Быстрая связь с ЛПР
             </div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {lead.phone && (
                 <a 
                   href={`tel:${lead.phone}`} 
-                  className="btn btn-call-emerald" 
-                  style={{ flex: 1, minWidth: '200px', padding: '10px 16px', fontSize: '13px' }}
+                  className="btn btn-call" 
+                  style={{ flex: 1, minWidth: '200px', padding: '9px 16px', fontSize: '13px', borderRadius: '6px', fontFamily: 'var(--font-mono)' }}
                 >
                   <Phone size={15} />
                   <span>Позвонить: {lead.phone}</span>
@@ -126,8 +126,8 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                   href={`https://t.me/${lead.telegram.replace('@', '')}`} 
                   target="_blank" 
                   rel="noreferrer"
-                  className="btn" 
-                  style={{ background: '#0284c7', color: '#fff', padding: '10px 16px', fontSize: '13px' }}
+                  className="btn btn-tg" 
+                  style={{ padding: '9px 16px', fontSize: '13px', borderRadius: '6px' }}
                 >
                   <Send size={15} />
                   <span>Написать в TG</span>
@@ -140,7 +140,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                   target="_blank" 
                   rel="noreferrer"
                   className="btn btn-outline" 
-                  style={{ padding: '10px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ padding: '9px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px' }}
                   title="Открыть оригинальную страницу заказа"
                 >
                   <ExternalLink size={14} />
@@ -151,92 +151,92 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               <button 
                 onClick={handleCopyPhone} 
                 className="btn btn-outline"
-                style={{ padding: '10px 14px' }}
+                style={{ padding: '9px 14px', borderRadius: '6px' }}
                 title="Скопировать телефон"
               >
-                {copied ? <Check size={15} color="#10b981" /> : <Copy size={15} />}
+                {copied ? <Check size={15} color="var(--color-accent-purple)" /> : <Copy size={15} />}
               </button>
             </div>
           </div>
 
           {/* Contact Details Card */}
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px', letterSpacing: '0.05em' }}>
+          <div style={{ background: 'var(--color-surface-white)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-headline)', marginBottom: '12px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               Данные ответственного лица
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
               <div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>ФИО ЛПР:</div>
-                <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{lead.contactName}</div>
+                <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>ФИО ЛПР:</div>
+                <div style={{ fontWeight: 700, color: 'var(--color-text-black)', marginTop: '2px' }}>{lead.contactName}</div>
               </div>
               <div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Должность:</div>
-                <div style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>{lead.role}</div>
+                <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Должность:</div>
+                <div style={{ color: 'var(--color-text-body)', marginTop: '2px' }}>{lead.role}</div>
               </div>
               <div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Прямой телефон:</div>
-                <div style={{ color: '#059669', fontWeight: 700, marginTop: '2px' }}>{lead.phone || 'Не указан'}</div>
+                <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Прямой телефон:</div>
+                <div style={{ color: 'var(--color-text-black)', fontWeight: 700, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>{lead.phone || 'Не указан'}</div>
               </div>
               <div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Telegram профиль:</div>
-                <div style={{ color: '#0284c7', fontWeight: 600, marginTop: '2px' }}>{lead.telegram || '—'}</div>
+                <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Telegram профиль:</div>
+                <div style={{ color: 'var(--color-accent-purple)', fontWeight: 600, marginTop: '2px' }}>{lead.telegram || '—'}</div>
               </div>
             </div>
           </div>
 
           {/* The Request Quote */}
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
+          <div style={{ background: 'var(--color-surface-white)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-headline)', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
                 Исходный запрос клиента
               </div>
-              <span className="badge" style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe' }}>
+              <span className="badge" style={{ background: '#e0e1f7', color: 'var(--color-accent-purple)', border: '1px solid var(--color-accent-lavender)' }}>
                 {lead.service}
               </span>
             </div>
             <div style={{ 
-              background: '#f8fafc', 
+              background: 'var(--color-surface-beige-2)', 
               padding: '14px', 
-              borderRadius: '10px', 
-              borderLeft: '3px solid var(--primary)',
+              borderRadius: '8px', 
+              borderLeft: '3px solid var(--color-accent-purple)',
               fontSize: '13px', 
               lineHeight: '1.6',
-              color: '#1e293b',
+              color: 'var(--color-text-black)',
               fontStyle: 'italic'
             }}>
               "{lead.requestText}"
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              <span>Ориентировочный бюджет: <strong style={{ color: '#059669', fontSize: '13px' }}>{lead.budget}</strong></span>
-              <span>Сигнал зафиксирован: {lead.date}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: 'var(--color-text-headline)' }}>
+              <span>Ориентировочный бюджет: <strong style={{ color: 'var(--color-text-black)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>{lead.budget}</strong></span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>Сигнал: {lead.date}</span>
             </div>
           </div>
 
           {/* Recommended Solution for Studio */}
-          <div style={{ background: '#faf5ff', border: '1px solid #ddd6fe', borderRadius: '16px', padding: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#7c3aed', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
+          <div style={{ background: 'var(--color-surface-beige-1)', border: '1px solid var(--color-accent-lavender)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-accent-purple)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               <Sparkles size={14} />
               <span>Рекомендуемое предложение студии</span>
             </div>
-            <div style={{ fontSize: '13px', lineHeight: '1.5', color: '#334155' }}>
+            <div style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--color-text-body)' }}>
               {lead.suggestedSolution}
             </div>
           </div>
 
           {/* Call Script & Icebreaker */}
-          <div style={{ background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: '16px', padding: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0891b2', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
+          <div style={{ background: 'var(--color-surface-beige-2)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-black)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               <MessageSquare size={14} />
               <span>Готовый скрипт для созвона с ЛПР</span>
             </div>
-            <div style={{ fontSize: '12px', lineHeight: '1.6', color: '#164e63' }}>
+            <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--color-text-body)' }}>
               «Добрый день, {lead.contactName}! Меня зовут [Имя], студия графики. Увидели ваш запрос на {lead.service} для {lead.company}. Мы специализируемся именно на сфере «{lead.industry}» и недавно делали подобную визуализацию/3D-интерактив. Готовы показать релевантный кейс и подготовить смету за 24 часа. Удобно ли сейчас уделить 2 минуты?»
             </div>
           </div>
 
           {/* Manager Notes */}
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.05em' }}>
+          <div style={{ background: 'var(--color-surface-white)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-headline)', marginBottom: '8px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               Заметки менеджера по созвону
             </div>
             <textarea
@@ -247,24 +247,26 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               style={{
                 width: '100%',
                 padding: '10px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                border: '1px solid var(--border-medium)',
                 fontSize: '13px',
                 fontFamily: 'inherit',
                 outline: 'none',
-                resize: 'vertical'
+                resize: 'vertical',
+                background: 'var(--color-surface-beige-1)',
+                color: 'var(--color-text-black)'
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={handleSaveNote} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px' }}>
+              <button onClick={handleSaveNote} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '4px' }}>
                 {savedNote ? 'Сохранено!' : 'Сохранить заметку'}
               </button>
             </div>
           </div>
 
           {/* Status Changer */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>Статус лида:</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--color-surface-beige-2)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-black)' }}>Статус лида:</span>
             <select
               value={lead.status || 'new'}
               onChange={(e) => onStatusChange(lead.id, e.target.value)}
@@ -272,9 +274,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                 fontSize: '12px',
                 fontWeight: 600,
                 padding: '6px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
+                borderRadius: '6px',
+                border: '1px solid var(--border-medium)',
+                background: 'var(--color-surface-white)',
+                color: 'var(--color-text-black)',
                 cursor: 'pointer'
               }}
             >
