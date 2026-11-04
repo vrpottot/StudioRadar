@@ -162,7 +162,11 @@ export async function callAi(prompt, isJson = true) {
   }
 
   if (OPENROUTER_API_KEY) {
-    return await callOpenRouter(prompt, isJson);
+    try {
+      return await callOpenRouter(prompt, isJson);
+    } catch (e) {
+      console.warn('[AI] OpenRouter error, trying Gemini...', e.message);
+    }
   }
   return await callGemini(prompt, isJson);
 }
