@@ -2,13 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { PORT, CORS_ORIGINS, DEFAULT_MONITORED_CHANNELS } from './config.js';
+import { PORT, CORS_ORIGINS } from './config.js';
 import { db } from './db.js';
-import { scrapePublicTelegramChannel } from './telegramWebScraper.js';
-import { gramjsService } from './gramjsService.js';
-import { scrapeAllHhLeads } from './hhScraper.js';
 import { runAutonomousAiLeadHunt } from './aiLeadHunter.js';
 import { analyzeLeadWithAi } from './geminiService.js';
+import { SIGNALS_CATALOG } from './signalsCatalog.js';
 
 const app = express();
 const server = createServer(app);
@@ -112,59 +110,7 @@ app.get('/api/stats', async (req, res) => {
   res.json(db.getStats());
 });
 
-// 6. Статус Telegram
-app.get('/api/telegram/status', async (req, res) => {
-  const isConfigured = gramjsService.isConfigured();
-  const isAuth = isConfigured ? await gramjsService.isAuthorized() : false;
-
-  res.json({
-    mtproto_configured: isConfigured,
-    mtproto_authorized: isAuth,
-    web_scraper_active: true,
-    monitored_channels: DEFAULT_MONITORED_CHANNELS,
-    instruction: !isAuth ? 'Для подключения GramJS (MTProto) запустите: npm run auth:tg' : 'Слушатель активен'
-  });
-});
-
-// 7. Сканирование HeadHunter
-app.post('/api/scan/hh', async (req, res) => {
-  try {
-    const hhLeads = await scrapeAllHhLeads(10);
-    let addedCount = 0;
-    let lastAdded = null;
-
-    for (const lead of hhLeads) {
-      const added = await db.addLead(lead);
-      if (added) {
-        addedCount++;
-        lastAdded = added;
-        broadcast({
-          type: 'new_lead_detected',
-          lead: {
-            id: added.id,
-            company: added.company,
-            industry: added.industry,
-            phone: added.phone,
-            service: added.service,
-            source: added.source
-          }
-        });
-      }
-    }
-
-    res.json({
-      success: true,
-      new_leads_found: addedCount,
-      message: addedCount > 0 
-        ? `Найдено ${addedCount} новых проектных заказов на hh.ru!` 
-        : 'Все актуальные заказы с hh.ru уже в базе'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 8. Автономный поиск заказов через ИИ-Агента (Gemini + Web)
+// 6. Автономный поиск заказов через ИИ-Агента (Gemini / DeepSeek + Web)
 app.post('/api/ai/hunt', async (req, res) => {
   try {
     const onProgress = (msg) => {
@@ -200,86 +146,17 @@ app.post('/api/ai/hunt', async (req, res) => {
   }
 });
 
-// 8.1. Сканирование Telegram каналов
-app.post('/api/scan/telegram', async (req, res) => {
-  try {
-    let totalAdded = 0;
-    const channels = DEFAULT_MONITORED_CHANNELS;
-
-    for (const channel of channels) {
-      broadcast({ type: 'ai_progress', message: `Сканирование Telegram: @${channel}...` });
-      try {
-        const leads = await scrapePublicTelegramChannel(channel, 20);
-        for (const lead of leads) {
-          const added = await db.addLead(lead);
-          if (added) {
-            totalAdded++;
-            broadcast({
-              type: 'new_lead_detected',
-              lead: {
-                id: added.id,
-                company: added.company,
-                industry: added.industry,
-                phone: added.phone,
-                service: added.service,
-                source: added.source
-              }
-            });
-          }
-        }
-      } catch (err) {
-        console.warn(`[Scan TG] Ошибка канала @${channel}:`, err.message);
-      }
-    }
-
-    broadcast({ type: 'ai_progress', message: `Сбор из Telegram завершен. Найдено новых: ${totalAdded}` });
-    setTimeout(() => broadcast({ type: 'ai_progress', message: '' }), 5000);
-
-    res.json({
-      success: true,
-      new_leads_found: totalAdded,
-      message: totalAdded > 0 
-        ? `Найдено ${totalAdded} новых заказов из Telegram!` 
-        : 'Все актуальные заказы из Telegram-каналов уже в базе'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 9. Общее сканирование всех площадок (HeadHunter + Telegram)
+// 7. Сквозной ИИ-поиск коммерческих тендеров и заявок в открытом вебе (Web Search + LLM)
 app.post('/api/scan', async (req, res) => {
   let totalAdded = 0;
 
-  // 1. Сначала сканируем HeadHunter
   try {
-    const hhLeads = await scrapeAllHhLeads(10);
-    for (const lead of hhLeads) {
-      const added = await db.addLead(lead);
-      if (added) {
-        totalAdded++;
-        broadcast({
-          type: 'new_lead_detected',
-          lead: {
-            id: added.id,
-            company: added.company,
-            industry: added.industry,
-            phone: added.phone,
-            service: added.service,
-            source: added.source
-          }
-        });
-      }
-    }
-  } catch (e) {
-    console.warn('[Scan] Ошибка сканирования hh:', e.message);
-  }
-
-  // 2. Сканируем Telegram каналы
-  for (const channel of DEFAULT_MONITORED_CHANNELS) {
+    broadcast({ type: 'ai_progress', message: 'Автономный поиск прямых коммерческих тендеров и заявок в открытом вебе...' });
     try {
-      const leads = await scrapePublicTelegramChannel(channel, 20);
-      for (const lead of leads) {
+      const aiLeads = await runAutonomousAiLeadHunt((msg) => {
+        broadcast({ type: 'ai_progress', message: msg });
+      });
+      for (const lead of aiLeads) {
         const added = await db.addLead(lead);
         if (added) {
           totalAdded++;
@@ -297,17 +174,103 @@ app.post('/api/scan', async (req, res) => {
         }
       }
     } catch (e) {
-      // игнорируем ошибку канала
+      console.warn('[Scan] Ошибка ИИ-хантинга:', e.message);
     }
-  }
 
-  res.json({
-    success: true,
-    new_leads_found: totalAdded,
-    message: totalAdded > 0 
-      ? `Успешно найдено и добавлено ${totalAdded} новых B2B-заказов!` 
-      : 'Все актуальные реальные заказы с площадок уже в базе'
+    const finalMsg = totalAdded > 0
+      ? `ИИ-поиск завершен! Найдено и добавлено ${totalAdded} новых B2B-заказчиков.`
+      : 'ИИ-поиск завершен. Все найденные заказы уже сохранены в базе.';
+
+    broadcast({ type: 'ai_progress', message: finalMsg });
+    setTimeout(() => broadcast({ type: 'ai_progress', message: '' }), 7000);
+
+    res.json({
+      success: true,
+      new_leads_found: totalAdded,
+      message: finalMsg
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- 8. ПАЙПЛАЙНЫ (Раздел 3 и 13.4 ТЗ) ---
+app.get('/api/pipelines', async (req, res) => {
+  await db.reload();
+  res.json(db.getAllPipelines());
+});
+
+app.get('/api/pipelines/:id', (req, res) => {
+  const pipe = db.getPipelineById(req.params.id);
+  if (!pipe) return res.status(404).json({ error: 'Пайплайн не найден' });
+  res.json(pipe);
+});
+
+app.post('/api/pipelines', async (req, res) => {
+  try {
+    const created = await db.addPipeline(req.body);
+    broadcast({ type: 'pipeline_created', pipeline: created });
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/pipelines/:id', async (req, res) => {
+  const updated = await db.updatePipeline(req.params.id, req.body);
+  if (!updated) return res.status(404).json({ error: 'Пайплайн не найден' });
+  broadcast({ type: 'pipeline_updated', pipeline: updated });
+  res.json(updated);
+});
+
+app.patch('/api/pipelines/:id/status', async (req, res) => {
+  const toggled = await db.togglePipelineStatus(req.params.id);
+  if (!toggled) return res.status(404).json({ error: 'Пайплайн не найден' });
+  broadcast({ type: 'pipeline_updated', pipeline: toggled });
+  res.json(toggled);
+});
+
+app.delete('/api/pipelines/:id', async (req, res) => {
+  const deleted = await db.deletePipeline(req.params.id);
+  if (!deleted) return res.status(404).json({ error: 'Пайплайн не найден' });
+  broadcast({ type: 'pipeline_deleted', id: req.params.id });
+  res.json({ success: true, message: 'Пайплайн удален' });
+});
+
+app.post('/api/pipelines/:id/duplicate', async (req, res) => {
+  const copy = await db.duplicatePipeline(req.params.id);
+  if (!copy) return res.status(404).json({ error: 'Пайплайн не найден' });
+  broadcast({ type: 'pipeline_created', pipeline: copy });
+  res.json(copy);
+});
+
+app.post('/api/pipelines/:id/run', async (req, res) => {
+  const pipe = db.getPipelineById(req.params.id);
+  if (!pipe) return res.status(404).json({ error: 'Пайплайн не найден' });
+
+  broadcast({ type: 'ai_progress', message: `Запуск мониторинга по стратегии: «${pipe.name}»...` });
+  const updated = await db.updatePipeline(req.params.id, { 
+    lastRunAt: new Date().toISOString().replace('T', ' ').slice(0, 16) 
   });
+  broadcast({ type: 'pipeline_updated', pipeline: updated });
+
+  res.json({ success: true, message: `Пайплайн «${pipe.name}» запущен в работу` });
+});
+
+// --- 9. КАТАЛОГ СИГНАЛОВ (Раздел 4 и 13.6 ТЗ) ---
+app.get('/api/signals', (req, res) => {
+  res.json(SIGNALS_CATALOG);
+});
+
+// --- 10. НАСТРОЙКИ (Раздел 11 и 16 ТЗ) ---
+app.get('/api/settings', async (req, res) => {
+  await db.reload();
+  res.json(db.getSettings());
+});
+
+app.post('/api/settings', async (req, res) => {
+  const updated = await db.updateSettings(req.body);
+  res.json({ success: true, settings: updated });
 });
 
 // Инициализация базы данных и запуск сервера

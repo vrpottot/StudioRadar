@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  Send, 
   Search, 
   Sparkles, 
   ExternalLink, 
@@ -8,38 +7,24 @@ import {
   AlertCircle, 
   Clock, 
   Play, 
-  RefreshCw,
-  ShieldCheck,
-  Radio
+  RefreshCw, 
+  ShieldCheck, 
+  FileText, 
+  Globe 
 } from 'lucide-react';
 
 export default function SourcesView({ 
-  onHhScan, 
-  isHhScanning, 
-  onTgScan, 
-  isTgScanning, 
   onAiHunt, 
-  isAiHunting 
+  isAiHunting,
+  onFullScan,
+  isScanningAll
 }) {
-  const telegramChannels = [
-    { name: "Brickspacer Career", username: "brickspacer_career", focus: "3D/CGI проекты и вакансии", status: "online" },
-    { name: "Designer Work Chat", username: "designerworkchat", focus: "Заказы для моушн и графических дизайнеров", status: "online" },
-    { name: "CG Work Hub", username: "CGWorkHub", focus: "3D графика, анимация и кинопроизводство", status: "online" },
-    { name: "Jetlag Production", username: "jetlagchat", focus: "Видеопроизводство, рекламные ролики, CGI", status: "online" },
-    { name: "Сиджин CG Chat", username: "cidjin_chat", focus: "Профессиональное 3D/CGI сообщество", status: "online" },
-    { name: "Desgang Community", username: "desgangchat", focus: "Дизайн, брендинг и моушн", status: "online" },
-    { name: "AI Vacancy Channel", username: "aivacancychannel", focus: "Нейросети, генеративная графика и ИИ-видео", status: "online" },
-    { name: "Motion Hunter", username: "motionhunter", focus: "Прямые заказы на моушн-дизайн", status: "online" },
-    { name: "CG Freelance & Orders", username: "cgfreelance", focus: "Спецзаказы на компьютерную графику", status: "online" }
-  ];
-
-  const hhQueries = [
-    { query: "3D motion", targetService: "3D моушен-дизайн", interval: "Каждые 4 часа" },
-    { query: "моушн дизайн ролик", targetService: "2D/3D моушен-дизайн", interval: "Каждые 4 часа" },
-    { query: "3D визуализация", targetService: "3D презентации продуктов", interval: "Каждые 6 часов" },
-    { query: "CGI видеоролик", targetService: "Рекламный CGI", interval: "Каждые 6 часов" },
-    { query: "3D анимация", targetService: "Анимационные ролики", interval: "Каждые 4 часа" },
-    { query: "разработка 3D конфигуратора", targetService: "3D Web-приложения", interval: "Каждые 12 часов" }
+  const tenderCategories = [
+    { name: "ЕИС Госзакупки (44-ФЗ)", focus: "Тендеры на видеопроизводство, презентационные ролики и анимацию", status: "online" },
+    { name: "ЕИС Закупки (223-ФЗ)", focus: "Коммерческие конкурсы госкорпораций на 3D графику и визуализацию", status: "online" },
+    { name: "Habr Design Hub", focus: "Кейсы студий, анонсы запусков брендов и редизайнов", status: "online" },
+    { name: "Открытый веб (Web Search)", focus: "Прямые запросы коммерческих КП и открытые конкурсы", status: "online" },
+    { name: "Отраслевые выставки (Expo)", focus: "Анонсы участников форумов ПМЭФ, ИННОПРОМ, Армия", status: "online" }
   ];
 
   return (
@@ -51,73 +36,24 @@ export default function SourcesView({
             Источники данных и мониторинг
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--color-text-headline)', marginTop: '2px' }}>
-            Управление подключаемыми модулями сбора информации по Telegram, HeadHunter и открытому вебу
+            Управление подключаемыми модулями сбора информации по закупкам, тендерам и открытому вебу
           </p>
         </div>
       </div>
 
       {/* Main Sources Cards Grid (Раздел 5 ТЗ) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-        {/* Telegram Card */}
+        {/* Tender EIS Card */}
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0e1f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Send size={18} color="var(--color-accent-purple)" />
+                  <FileText size={18} color="var(--color-accent-purple)" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Telegram Модуль</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Web Scraper + GramJS MTProto</div>
-                </div>
-              </div>
-
-              <span className="badge badge-verified">
-                <Radio size={12} color="var(--color-accent-green-text)" /> 9 каналов
-              </span>
-            </div>
-
-            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Автоматический сбор публичных постов и чатов профильных сообществ с фильтрацией резюме и спама.
-            </p>
-
-            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Быстрый скрапинг через зеркала t.me/s/ без блокировок</div>
-              <div>• Поддержка авторизации личного аккаунта для закрытых чатов</div>
-            </div>
-          </div>
-
-          <button
-            onClick={onTgScan}
-            disabled={isTgScanning}
-            className="btn btn-outline"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
-          >
-            {isTgScanning ? (
-              <>
-                <RefreshCw size={14} className="spin" />
-                <span>Идет сканирование 9 каналов...</span>
-              </>
-            ) : (
-              <>
-                <Play size={14} />
-                <span>Запустить сбор из Telegram</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* HeadHunter Card */}
-        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fdf0e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Search size={18} color="#7b3306" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>HeadHunter (hh.ru)</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Парсер проектных вакансий</div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>ЕИС Закупки (Тендеры)</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>44-ФЗ и 223-ФЗ конкурсы</div>
                 </div>
               </div>
 
@@ -127,30 +63,30 @@ export default function SourcesView({
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Поиск компаний, ищущих подрядчиков или ключевых 3D-специалистов, с автоматическим извлечением прямых контактов ЛПР.
+              Прямой мониторинг официальных закупок и запросов КП на видеопроизводство, 3D анимацию и презентационные фильмы.
             </p>
 
             <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• 7 поисковых матриц по ключевым направлениям студии</div>
-              <div>• Глубокое сканирование страницы вакансии и сайта работодателя</div>
+              <div>• Проверка закупок по 7 ключевым поисковым матрицам</div>
+              <div>• Автоматическое извлечение прямых контактов ответственных ЛПР</div>
             </div>
           </div>
 
           <button
-            onClick={onHhScan}
-            disabled={isHhScanning}
+            onClick={onAiHunt}
+            disabled={isAiHunting}
             className="btn btn-outline"
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
           >
-            {isHhScanning ? (
+            {isAiHunting ? (
               <>
                 <RefreshCw size={14} className="spin" />
-                <span>Парсинг свежих вакансий...</span>
+                <span>Идет поиск по тендерам...</span>
               </>
             ) : (
               <>
                 <Play size={14} />
-                <span>Запустить сбор с HeadHunter</span>
+                <span>Собрать тендеры ЕИС</span>
               </>
             )}
           </button>
@@ -204,42 +140,80 @@ export default function SourcesView({
             )}
           </button>
         </div>
+
+        {/* Habr Design Card */}
+        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--color-surface-beige-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Globe size={18} color="var(--color-accent-purple)" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Habr Design & Медиа</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Кейсы и анонсы брендов</div>
+                </div>
+              </div>
+
+              <span className="badge badge-verified">
+                <CheckCircle2 size={12} /> Активен
+              </span>
+            </div>
+
+            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
+              Мониторинг отраслевых публикаций о запуске новых продуктов, ребрендингах и технологических инициативах.
+            </p>
+
+            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div>• Отслеживание прямых потребностей в визуализациях</div>
+              <div>• Проверка соответствия 7 целевым отраслям студии</div>
+            </div>
+          </div>
+
+          <button
+            onClick={onFullScan}
+            disabled={isScanningAll}
+            className="btn btn-outline"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
+          >
+            {isScanningAll ? (
+              <>
+                <RefreshCw size={14} className="spin" />
+                <span>Сканирование медиа...</span>
+              </>
+            ) : (
+              <>
+                <Play size={14} />
+                <span>Сквозной сбор по всем источникам</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Detailed Channels List Table */}
+      {/* Detailed Sources List Table */}
       <div className="card" style={{ padding: '20px' }}>
         <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-black)', marginBottom: '12px' }}>
-          Список подключенных Telegram-каналов и сообществ
+          Список подключенных источников мониторинга
         </div>
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--color-text-headline)', fontSize: '11px', textTransform: 'uppercase' }}>
-                <th style={{ padding: '10px' }}>Канал / Сообщество</th>
+                <th style={{ padding: '10px' }}>Площадка / Источник</th>
                 <th style={{ padding: '10px' }}>Фокус мониторинга</th>
-                <th style={{ padding: '10px' }}>Ссылка</th>
                 <th style={{ padding: '10px' }}>Статус</th>
               </tr>
             </thead>
             <tbody>
-              {telegramChannels.map((ch, idx) => (
+              {tenderCategories.map((ch, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--color-surface-beige-2)' }}>
                   <td style={{ padding: '10px', fontWeight: 600, color: 'var(--color-text-black)' }}>
                     {ch.name}
                   </td>
                   <td style={{ padding: '10px', color: 'var(--color-text-body)' }}>
                     {ch.focus}
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    <a 
-                      href={`https://t.me/${ch.username}`} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      style={{ color: 'var(--color-accent-purple)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}
-                    >
-                      @{ch.username} <ExternalLink size={12} />
-                    </a>
                   </td>
                   <td style={{ padding: '10px' }}>
                     <span className="badge badge-verified" style={{ fontSize: '10px' }}>

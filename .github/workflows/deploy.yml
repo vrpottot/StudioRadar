@@ -1,0 +1,66 @@
+name: Deploy StudioRadar to Production Server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    name: Build & Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: 📦 Package Deployment Bundle
+        run: |
+          mkdir -p staging/backend staging/frontend
+          cp -r backend/src staging/backend/
+          cp backend/package.json backend/package-lock.json staging/backend/
+          cp -r frontend/dist staging/frontend/
+          tar -czf deploy.tar.gz -C staging backend frontend
+
+      - name: 🚀 Upload Bundle to Server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 79.137.199.70
+          username: root
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          source: "deploy.tar.gz"
+          target: "/tmp"
+
+      - name: 🔄 Extract and Restart Services on Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 79.137.199.70
+          username: root
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            mkdir -p /var/www/studioradar
+            tar -xzf /tmp/deploy.tar.gz -C /var/www/studioradar
+            rm -f /tmp/deploy.tar.gz
+            
+            # Install production dependencies for backend
+            cd /var/www/studioradar/backend
+            npm install --omit=dev
+            
+            # Restart backend and reload nginx
+            systemctl restart studioradar
+            systemctl reload nginx
+            
+            # Verify status
+            systemctl is-active --quiet studioradar && echo "✅ StudioRadar backend is active and running!" || exit 1

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   X, 
   Check, 
@@ -89,7 +89,7 @@ export default function PipelineBuilderModal({ isOpen, onClose, onSavePipeline }
       targetServices: selectedServices,
       targetIndustries: selectedIndustries,
       selectedSignals: selectedSignals,
-      sources: ["Telegram Channels", "hh.ru", "Web Search"],
+      sources: ["��� �������", "Web Search", "Habr Design"],
       priorityMinScore: minScore,
       minGrade: minScore >= 80 ? "A" : "B",
       trackedCompanies: Math.floor(Math.random() * 25) + 15,
@@ -283,7 +283,7 @@ export default function PipelineBuilderModal({ isOpen, onClose, onSavePipeline }
                     <Sparkles size={16} color="var(--color-accent-purple)" /> Способ А: Автопоиск
                   </div>
                   <p style={{ fontSize: '12px', color: 'var(--color-text-headline)', marginTop: '4px' }}>
-                    Поиск по 7 целевым отраслям в Telegram, hh.ru и интернете
+                    Поиск по 7 целевым отраслям в тендерах, медиа и интернете
                   </p>
                 </div>
 
@@ -493,7 +493,7 @@ export default function PipelineBuilderModal({ isOpen, onClose, onSavePipeline }
                   <CheckCircle2 size={18} /> Пайплайн готов к немедленной активации
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--color-accent-green-text)', marginTop: '4px' }}>
-                  Система начнет сбор информации по подключенным каналам Telegram и hh.ru в фоновом режиме.
+                  Система начнет сбор информации по подключенным тендерам и открытому вебу в фоновом режиме.
                 </p>
               </div>
 
@@ -561,3 +561,4 @@ export default function PipelineBuilderModal({ isOpen, onClose, onSavePipeline }
     </div>
   );
 }
+

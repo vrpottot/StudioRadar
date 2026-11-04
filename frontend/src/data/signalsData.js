@@ -1,6 +1,6 @@
 /**
- * Каталог сигналов спроса (Раздел 4 ТЗ)
- * Содержит 5 категорий сигналов с метаданными, условиями обнаружения и релевантными услугами
+ * Каталог сигналов спроса (Раздел 4 и 13.6 ТЗ)
+ * Содержит 10 сигналов спроса по 5 категориям с весами и правилами квалификации
  */
 
 export const SIGNAL_CATEGORIES = [
@@ -13,7 +13,7 @@ export const SIGNAL_CATEGORIES = [
 ];
 
 export const SIGNALS_CATALOG = [
-  // 1. Прямой спрос на услуги (Высокий приоритет)
+  // 1. Прямой спрос на услуги (Высший приоритет A+)
   {
     id: "sig_direct_tender",
     title: "Тендер / конкурс на видеопроизводство",
@@ -28,7 +28,7 @@ export const SIGNALS_CATALOG = [
       "2D моушен-дизайн и анимация",
       "2D и 3D мультипликация"
     ],
-    sources: ["hh.ru", "Web Search", "Telegram Channels"],
+    sources: ["ЕИС Закупки", "Web Search"],
     example: "ООО 'Альфа-Банк' объявил тендер на создание серии продуктовых 3D-роликов для мобильного приложения.",
     activePipelinesCount: 3
   },
@@ -39,13 +39,13 @@ export const SIGNALS_CATALOG = [
     priority: "A+",
     weight: 30,
     validityDays: 7,
-    description: "Пост или публикация от лица компании с прямым запросом на поиск студии или команды для рекламного проекта.",
+    description: "Публикация от лица компании с прямым запросом на поиск студии или команды для рекламного проекта.",
     indicators: ["ищем продакшн", "нужна студия", "подрядчик по 3D", "заказ на моушн"],
     relevantServices: [
       "3D моушен-дизайн и анимация",
       "ИИ видеоролики и графика"
     ],
-    sources: ["Telegram Channels", "Telegram Chats"],
+    sources: ["Web Search", "Отраслевые медиа"],
     example: "Бренд натуральной косметики ищет студию для 3D визуализации флаконов и анимации для маркетплейсов.",
     activePipelinesCount: 4
   },
@@ -61,7 +61,7 @@ export const SIGNALS_CATALOG = [
     relevantServices: [
       "3D Web-приложения и интерактив"
     ],
-    sources: ["hh.ru", "Web Search"],
+    sources: ["ЕИС Закупки", "Web Search"],
     example: "Автодилер премиум-сегмента ищет разработчиков 3D конфигуратора экстерьера автомобилей для нового портала.",
     activePipelinesCount: 2
   },
@@ -74,13 +74,13 @@ export const SIGNALS_CATALOG = [
     priority: "B",
     weight: 20,
     validityDays: 30,
-    description: "Компания открыла вакансию 3D моушн-дизайнера. Указывает на растущий объем задач и потенциальную готовность передать пиковые нагрузки студии.",
-    indicators: ["Вакансия 3D Motion Designer", "3D Generalist", "Houdini / Cinema 4D"],
+    description: "Компания открыла позицию 3D моушн-дизайнера. Указывает на растущий объем задач и потенциальную готовность передать пиковые нагрузки студии.",
+    indicators: ["Позиция 3D Motion Designer", "3D Generalist", "Houdini / Cinema 4D"],
     relevantServices: [
       "3D моушен-дизайн и анимация"
     ],
-    sources: ["hh.ru", "Telegram Channels"],
-    example: "Финтех-компания открыла вакансию ведущего 3D моушн дизайнера для продуктовых релизов.",
+    sources: ["Web Search", "Habr Design"],
+    example: "Финтех-компания открыла позицию ведущего 3D моушн дизайнера для продуктовых релизов.",
     activePipelinesCount: 3
   },
   {
@@ -95,7 +95,7 @@ export const SIGNALS_CATALOG = [
     relevantServices: [
       "ИИ видеоролики и графика"
     ],
-    sources: ["Telegram Channels", "hh.ru"],
+    sources: ["Web Search", "Habr Design"],
     example: "Крупная FMCG сеть ищет специалиста по генерации AI-роликов для промо-кампаний.",
     activePipelinesCount: 2
   },
@@ -106,13 +106,13 @@ export const SIGNALS_CATALOG = [
     priority: "B",
     weight: 18,
     validityDays: 45,
-    description: "Одновременное появление нескольких вакансий арт-директоров, аниматоров и видеопродюсеров.",
+    description: "Одновременное появление нескольких позиций арт-директоров, аниматоров и видеопродюсеров.",
     indicators: ["арт-директор", "креативный продюсер", "расширение отдела дизайна"],
     relevantServices: [
       "2D моушен-дизайн и анимация",
       "2D и 3D мультипликация"
     ],
-    sources: ["hh.ru"],
+    sources: ["Web Search", "ЕИС Закупки"],
     example: "Производитель напитков расширяет внутренний медиацентр на 10+ креативных позиций.",
     activePipelinesCount: 1
   },
@@ -131,7 +131,7 @@ export const SIGNALS_CATALOG = [
       "3D моушен-дизайн и анимация",
       "2D моушен-дизайн и анимация"
     ],
-    sources: ["Web Search", "Telegram Channels"],
+    sources: ["Web Search", "Отраслевые медиа"],
     example: "Нефтехимический холдинг объявил о ребрендинге линейки моторных масел и запуске рекламной кампании.",
     activePipelinesCount: 3
   },
@@ -186,8 +186,8 @@ export const SIGNALS_CATALOG = [
       "3D моушен-дизайн и анимация",
       "2D и 3D мультипликация"
     ],
-    sources: ["Telegram Channels", "Telegram Chats"],
-    example: "Jetlag Production ищет студию-партнера для создания 3D сцен в федеральный ТВ-ролик.",
+    sources: ["Web Search", "Habr Design"],
+    example: "Продакшн ищет студию-партнера для создания 3D сцен в федеральный ТВ-ролик.",
     activePipelinesCount: 4
   }
 ];

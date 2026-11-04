@@ -32,7 +32,8 @@ export async function callOmniRoute(prompt, isJson = true) {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + OPENROUTER_API_KEY
     },
     body: JSON.stringify(body)
   });
@@ -116,7 +117,7 @@ export async function callGemini(prompt, isJson = true) {
     throw new Error('Ключ Google_api или OPENROUTER_API_KEY не найден в .env');
   }
 
-  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-1.5-flash'];
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-flash-lite-latest'];
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -204,7 +205,6 @@ ${rawText.slice(0, 2500)}
   "contact_name": "ФИО или имя контактного лица (или 'Отдел маркетинга')",
   "role": "Должность контактного лица (напр. 'Директор по маркетингу', 'Бренд-менеджер')",
   "phone": null, // ВНИМАНИЕ: СТРОГО ЗАПРЕЩЕНО выдумывать телефон! Указывай номер ТОЛЬКО если он явно написан в исходном тексте публикации, иначе строго null!
-  "telegram": "Telegram контакт с символом @ (или null)",
   "estimated_budget": "Оценочный бюджет задачи (напр. 'от 500 000 ₽' или 'По согласованию')",
   "score": 85,
   "summary_task": "Краткая суть задачи клиента в 1-2 предложениях",

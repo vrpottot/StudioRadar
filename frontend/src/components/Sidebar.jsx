@@ -4,7 +4,7 @@ import {
   PhoneCall, 
   Clock, 
   CheckCircle2, 
-  Box, 
+  Radar, 
   TrendingUp, 
   Sparkles, 
   Radio, 
@@ -88,15 +88,16 @@ export default function Sidebar({
             height: '40px', 
             minWidth: '40px',
             marginLeft: '14px',
-            borderRadius: '8px', 
-            background: 'var(--color-accent-purple)', 
+            borderRadius: '10px', 
+            background: 'linear-gradient(135deg, #3b2a60 0%, #241740 100%)', 
+            border: '1px solid rgba(212, 197, 246, 0.25)',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(59, 42, 96, 0.25)',
+            boxShadow: '0 2px 10px rgba(59, 42, 96, 0.35)',
             flexShrink: 0
           }}>
-            <Box size={20} color="var(--color-accent-lavender)" />
+            <Radar size={22} color="#d4c5f6" strokeWidth={2.2} />
           </div>
 
           {/* Title & Status - Fades in on hover */}

@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch --watch-path=src src/server.js",
-    "auth:tg": "node src/authTelegram.js"
+    "dev": "node --watch --watch-path=src src/server.js"
   },
   "dependencies": {
     "axios": "^1.7.9",
@@ -15,7 +14,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "telegram": "^2.26.16",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "ssh2": "^1.17.0"
   }
 }

@@ -15,7 +15,6 @@ export function exportLeadsToCsv(leads, filename = 'studioradar_leads.csv') {
     'Грейд',
     'Match Score (%)',
     'Телефон',
-    'Telegram',
     'Контактное лицо',
     'Источник',
     'Статус',
@@ -33,7 +32,6 @@ export function exportLeadsToCsv(leads, filename = 'studioradar_leads.csv') {
     l.grade || (l.score >= 90 ? 'A+' : l.score >= 75 ? 'A' : l.score >= 60 ? 'B' : l.score >= 45 ? 'C' : 'D'),
     l.score || '',
     `"${(l.phone || '').replace(/"/g, '""')}"`,
-    `"${(l.telegram || '').replace(/"/g, '""')}"`,
     `"${(l.contactName || '').replace(/"/g, '""')}"`,
     `"${(l.source || '').replace(/"/g, '""')}"`,
     `"${(l.status || '').replace(/"/g, '""')}"`,
@@ -45,7 +43,7 @@ export function exportLeadsToCsv(leads, filename = 'studioradar_leads.csv') {
 
   const csvContent = '\uFEFF' + [
     headers.join(';'),
-    ...rows.map(r => r.join(';'))
+    ...rows.map(e => e.join(';'))
   ].join('\r\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -53,8 +51,8 @@ export function exportLeadsToCsv(leads, filename = 'studioradar_leads.csv') {
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
   link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }

@@ -21,7 +21,7 @@ export const INITIAL_PIPELINES = [
       "sig_direct_order",
       "sig_prof_subcontract"
     ],
-    sources: ["Telegram Channels", "hh.ru"],
+    sources: ["ЕИС Закупки", "Web Search"],
     priorityMinScore: 75,
     minGrade: "A",
     trackedCompanies: 48,
@@ -48,7 +48,7 @@ export const INITIAL_PIPELINES = [
       "sig_mkt_rebranding",
       "sig_hire_motion_3d"
     ],
-    sources: ["hh.ru", "Web Search", "Telegram Channels"],
+    sources: ["ЕИС Закупки", "Web Search", "Habr Design"],
     priorityMinScore: 70,
     minGrade: "B",
     trackedCompanies: 64,
@@ -75,7 +75,7 @@ export const INITIAL_PIPELINES = [
       "sig_mkt_expo",
       "sig_direct_3d_web"
     ],
-    sources: ["hh.ru", "Web Search"],
+    sources: ["ЕИС Закупки", "Web Search"],
     priorityMinScore: 80,
     minGrade: "A",
     trackedCompanies: 32,
@@ -100,7 +100,7 @@ export const INITIAL_PIPELINES = [
       "sig_hire_ai_artist",
       "sig_biz_investment"
     ],
-    sources: ["hh.ru", "Telegram Channels"],
+    sources: ["ЕИС Закупки", "Web Search"],
     priorityMinScore: 70,
     minGrade: "B",
     trackedCompanies: 29,
@@ -115,13 +115,17 @@ const LOCAL_STORAGE_KEY = 'studioradar_pipelines_v1';
 export function getSavedPipelines() {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return INITIAL_PIPELINES;
+    if (!raw) return INITIAL_PIPELINES;
+    return JSON.parse(raw);
+  } catch (e) {
+    return INITIAL_PIPELINES;
+  }
 }
 
 export function savePipelines(pipelines) {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(pipelines));
-  } catch (e) {}
+  } catch (e) {
+    console.error('Ошибка сохранения пайплайнов в localStorage', e);
+  }
 }

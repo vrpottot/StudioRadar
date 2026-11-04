@@ -12,7 +12,9 @@ import SourcesView from './components/SourcesView';
 import SettingsView from './components/SettingsView';
 import { getSavedPipelines, savePipelines } from './data/pipelinesData';
 
-const API_BASE = "http://127.0.0.1:8001";
+const API_BASE = (typeof window !== 'undefined' && (window.location.origin.includes(':5173') || window.location.origin.includes(':3000')))
+  ? "http://127.0.0.1:8001" 
+  : "";
 
 export default function App() {
   const [activeView, setActiveView] = useState('leads'); // 'overview' | 'pipelines' | 'leads' | 'signals' | 'sources' | 'settings'
@@ -32,10 +34,23 @@ export default function App() {
   const [onlyWithPhone, setOnlyWithPhone] = useState(false);
 
   // Статусы сканеров
+  const [isScanningAll, setIsScanningAll] = useState(false);
   const [isAiHunting, setIsAiHunting] = useState(false);
-  const [isHhScanning, setIsHhScanning] = useState(false);
-  const [isTgScanning, setIsTgScanning] = useState(false);
   const [aiProgressMessage, setAiProgressMessage] = useState('');
+
+  // Загрузка пайплайнов с бэкенда
+  const fetchBackendPipelines = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/pipelines`);
+      if (res.ok) {
+        const data = await res.json();
+        setPipelines(data);
+        savePipelines(data);
+      }
+    } catch (e) {
+      console.warn("Ошибка загрузки пайплайнов:", e.message);
+    }
+  };
 
   // Загрузка лидов с бэкенда
   const fetchBackendLeads = async () => {
@@ -53,7 +68,6 @@ export default function App() {
             contactName: item.contact_name,
             role: item.role,
             phone: item.phone,
-            telegram: item.telegram,
             source: item.source,
             sourceType: item.source_type,
             budget: item.budget,
@@ -82,16 +96,24 @@ export default function App() {
     } catch (e) {}
 
     fetchBackendLeads();
+    fetchBackendPipelines();
 
     // WebSocket для моментального реалтайм обновления
     let ws;
     try {
-      ws = new WebSocket("ws://127.0.0.1:8001/ws/leads");
+      const isLocalDev = window.location.origin.includes(':5173') || window.location.origin.includes(':3000');
+      const wsUrl = isLocalDev 
+        ? "ws://127.0.0.1:8001/ws/leads" 
+        : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/leads`;
+      ws = new WebSocket(wsUrl);
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === "new_lead_detected" || msg.type === "lead_status_updated") {
             fetchBackendLeads();
+          }
+          if (msg.type === "pipeline_created" || msg.type === "pipeline_updated" || msg.type === "pipeline_deleted") {
+            fetchBackendPipelines();
           }
           if (msg.type === "ai_progress" && msg.message) {
             setAiProgressMessage(msg.message);
@@ -158,50 +180,29 @@ export default function App() {
     }
   };
 
-  // Сканирование HeadHunter
-  const handleHhScan = async () => {
-    if (isHhScanning) return;
-    setIsHhScanning(true);
-    setAiProgressMessage("Сканирование проектных заказов на hh.ru...");
+  // Сквозной сбор по всем источникам (ЕИС Закупки + Habr Design + AI Web Hunter)
+  const handleFullScan = async () => {
+    if (isScanningAll) return;
+    setIsScanningAll(true);
+    setAiProgressMessage("ИИ запускает поиск коммерческих тендеров и прямых заявок в открытом вебе...");
 
     try {
-      const res = await fetch(`${API_BASE}/api/scan/hh`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/api/scan`, { method: "POST" });
       const data = await res.json();
       await fetchBackendLeads();
-      setAiProgressMessage(data.message || "Сбор с HH.ru завершен.");
-      setTimeout(() => setAiProgressMessage(''), 6000);
+      setAiProgressMessage(data.message || `Сквозной сбор завершен! Найдено ${data.new_leads_found || 0} новых лидов.`);
+      setTimeout(() => setAiProgressMessage(''), 8000);
     } catch (err) {
-      console.warn("Ошибка сканирования HH:", err);
-      setAiProgressMessage("Ошибка при сборе с hh.ru");
+      console.warn("Ошибка сквозного сканирования:", err);
+      setAiProgressMessage("Сбой при выполнении сквозного сканирования.");
       setTimeout(() => setAiProgressMessage(''), 5000);
     } finally {
-      setIsHhScanning(false);
+      setIsScanningAll(false);
     }
   };
 
-  // Сканирование Telegram
-  const handleTgScan = async () => {
-    if (isTgScanning) return;
-    setIsTgScanning(true);
-    setAiProgressMessage("Сканирование CG и дизайн Telegram каналов...");
-
-    try {
-      const res = await fetch(`${API_BASE}/api/scan/telegram`, { method: "POST" });
-      const data = await res.json();
-      await fetchBackendLeads();
-      setAiProgressMessage(data.message || "Сбор из Telegram завершен.");
-      setTimeout(() => setAiProgressMessage(''), 6000);
-    } catch (err) {
-      console.warn("Ошибка сканирования TG:", err);
-      setAiProgressMessage("Ошибка при сборе из Telegram");
-      setTimeout(() => setAiProgressMessage(''), 5000);
-    } finally {
-      setIsTgScanning(false);
-    }
-  };
-
-  // Управление пайплайнами
-  const handleTogglePipelineStatus = (pipeId) => {
+  // Управление пайплайнами (синхронизация с бэкенд API)
+  const handleTogglePipelineStatus = async (pipeId) => {
     setPipelines(prev => {
       const updated = prev.map(p => {
         if (p.id === pipeId) {
@@ -213,47 +214,65 @@ export default function App() {
       savePipelines(updated);
       return updated;
     });
+
+    try {
+      await fetch(`${API_BASE}/api/pipelines/${pipeId}/status`, { method: "PATCH" });
+    } catch (err) {}
   };
 
-  const handleRunPipeline = (pipeId) => {
+  const handleRunPipeline = async (pipeId) => {
     const pipe = pipelines.find(p => p.id === pipeId);
-    setAiProgressMessage(`Запущен пайплайн «${pipe?.name || ''}»...`);
+    setAiProgressMessage(`Запуск пайплайна «${pipe?.name || ''}»...`);
+    try {
+      await fetch(`${API_BASE}/api/pipelines/${pipeId}/run`, { method: "POST" });
+    } catch (err) {}
     handleAiHunt();
   };
 
-  const handleDeletePipeline = (pipeId) => {
+  const handleDeletePipeline = async (pipeId) => {
     if (confirm("Вы уверены, что хотите удалить эту стратегию поиска?")) {
       setPipelines(prev => {
         const updated = prev.filter(p => p.id !== pipeId);
         savePipelines(updated);
         return updated;
       });
+
+      try {
+        await fetch(`${API_BASE}/api/pipelines/${pipeId}`, { method: "DELETE" });
+      } catch (err) {}
     }
   };
 
-  const handleDuplicatePipeline = (pipeId) => {
-    const pipe = pipelines.find(p => p.id === pipeId);
-    if (!pipe) return;
-    const duplicated = {
-      ...pipe,
-      id: `pipe_${Date.now()}`,
-      name: `${pipe.name} (Копия)`,
-      lastRunAt: "Еще не запускался"
-    };
-    setPipelines(prev => {
-      const updated = [duplicated, ...prev];
-      savePipelines(updated);
-      return updated;
-    });
+  const handleDuplicatePipeline = async (pipeId) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/pipelines/${pipeId}/duplicate`, { method: "POST" });
+      if (res.ok) {
+        const copy = await res.json();
+        setPipelines(prev => {
+          const updated = [copy, ...prev];
+          savePipelines(updated);
+          return updated;
+        });
+      }
+    } catch (err) {}
   };
 
-  const handleSaveNewPipeline = (newPipe) => {
+  const handleSaveNewPipeline = async (newPipe) => {
     setPipelines(prev => {
       const updated = [newPipe, ...prev];
       savePipelines(updated);
       return updated;
     });
-    setAiProgressMessage(`Пайплайн «${newPipe.name}» успешно создан и активирован!`);
+
+    try {
+      await fetch(`${API_BASE}/api/pipelines`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPipe)
+      });
+    } catch (err) {}
+
+    setAiProgressMessage(`Пайплайн «${newPipe.name}» успешно создан и сохранен в БД!`);
     setTimeout(() => setAiProgressMessage(''), 6000);
   };
 
@@ -317,12 +336,8 @@ export default function App() {
       {/* Main Content Area */}
       <div className="main-content">
         <Header 
-          onAiHunt={handleAiHunt}
-          isAiHunting={isAiHunting}
-          onHhScan={handleHhScan}
-          isHhScanning={isHhScanning}
-          onTgScan={handleTgScan}
-          isTgScanning={isTgScanning}
+          onFullScan={handleFullScan}
+          isScanningAll={isScanningAll}
           leadsCount={leads.length}
           aiProgressMessage={aiProgressMessage}
         />
@@ -382,12 +397,10 @@ export default function App() {
           {/* 5. ЭКРАН "ИСТОЧНИКИ ДАННЫХ" (Раздел 5 и 13.8 ТЗ) */}
           {activeView === 'sources' && (
             <SourcesView 
-              onHhScan={handleHhScan}
-              isHhScanning={isHhScanning}
-              onTgScan={handleTgScan}
-              isTgScanning={isTgScanning}
               onAiHunt={handleAiHunt}
               isAiHunting={isAiHunting}
+              onFullScan={handleFullScan}
+              isScanningAll={isScanningAll}
             />
           )}
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Phone, 
-  Send, 
   ExternalLink, 
   Search, 
   Filter, 
@@ -190,7 +189,7 @@ export default function LeadTable({
                       </div>
                     </td>
 
-                    {/* LPR & Phone / TG */}
+                    {/* LPR & Phone */}
                     <td style={{ minWidth: '190px' }} onClick={(e) => e.stopPropagation()}>
                       <div style={{ fontWeight: 600, color: 'var(--color-text-black)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <User size={14} color="var(--color-text-headline)" />
@@ -213,19 +212,6 @@ export default function LeadTable({
                           </a>
                         ) : (
                           <span style={{ fontSize: '11px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>Телефон в поиске</span>
-                        )}
-
-                        {lead.telegram && (
-                          <a 
-                            href={`https://t.me/${lead.telegram.replace('@', '')}`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="btn btn-tg"
-                            style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '4px' }}
-                            title="Открыть диалог в Telegram"
-                          >
-                            <Send size={11} />
-                          </a>
                         )}
                       </div>
                     </td>
@@ -263,10 +249,10 @@ export default function LeadTable({
                         <span style={{ 
                           fontSize: '11px', 
                           fontFamily: 'var(--font-mono)',
-                          color: lead.sourceType === 'ai_agent' ? 'var(--color-accent-purple)' : (lead.sourceType === 'hh' ? '#7b3306' : '#1e3a5f'), 
+                          color: lead.sourceType === 'ai_agent' ? 'var(--color-accent-purple)' : '#1e3a5f', 
                           fontWeight: 600,
-                          background: lead.sourceType === 'ai_agent' ? '#e0e1f7' : (lead.sourceType === 'hh' ? '#fdf0e6' : '#e7eef6'),
-                          border: `1px solid ${lead.sourceType === 'ai_agent' ? 'var(--color-accent-lavender)' : (lead.sourceType === 'hh' ? '#f4e6d7' : '#cde0f1')}`,
+                          background: lead.sourceType === 'ai_agent' ? '#e0e1f7' : '#e7eef6',
+                          border: `1px solid ${lead.sourceType === 'ai_agent' ? 'var(--color-accent-lavender)' : '#cde0f1'}`,
                           padding: '2px 6px',
                           borderRadius: '4px',
                           display: 'inline-flex',

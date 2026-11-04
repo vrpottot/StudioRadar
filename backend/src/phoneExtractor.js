@@ -66,7 +66,7 @@ export function extractWebsites(text) {
   if (!text) return [];
   const matches = text.match(/https?:\/\/[^\s<>"]+|www\.[^\s<>"]+/gi) || [];
   return matches
-    .filter(w => !w.includes('hh.ru') && !w.includes('t.me') && !w.includes('duckduckgo') && !w.includes('google'))
+    .filter(w => !w.includes('duckduckgo') && !w.includes('google'))
     .map(w => w.startsWith('http') ? w : `https://${w}`);
 }
 
@@ -151,7 +151,6 @@ export async function lookupCompanyPhone(companyName) {
       if (match) rawHref = decodeURIComponent(match[1]);
 
       if (rawHref.startsWith('http') && 
-          !rawHref.includes('hh.ru') && 
           !rawHref.includes('superjob') && 
           !rawHref.includes('spark-interfax') && 
           !rawHref.includes('rusprofile') && 

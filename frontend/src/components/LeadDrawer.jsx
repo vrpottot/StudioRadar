@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   X, 
   Phone, 
-  Send, 
   Building2, 
   User, 
   Calendar, 
@@ -28,85 +27,91 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
   if (!lead) return null;
 
   const handleCopyPhone = () => {
-    if (lead.phone) {
-      navigator.clipboard.writeText(lead.phone);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!lead.phone) return;
+    navigator.clipboard.writeText(lead.phone);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSaveNote = () => {
-    onSaveNote(lead.id, note);
-    setSavedNote(true);
-    setTimeout(() => setSavedNote(false), 2000);
+    if (onSaveNote) {
+      onSaveNote(lead.id, note);
+      setSavedNote(true);
+      setTimeout(() => setSavedNote(false), 2000);
+    }
   };
 
   return (
     <>
-      {/* Overlay */}
-      <div className="drawer-overlay" onClick={onClose} />
-
-      {/* Drawer Container */}
-      <div className="drawer slide-in-right">
-        {/* Header */}
-        <div style={{ 
-          padding: '24px', 
-          borderBottom: '1px solid var(--border-subtle)', 
-          background: 'var(--color-surface-white)',
-          display: 'flex', 
-          alignItems: 'flex-start', 
-          justifyContent: 'space-between',
-          position: 'sticky',
+      {/* Backdrop */}
+      <div 
+        onClick={onClose}
+        style={{
+          position: 'fixed',
           top: 0,
-          zIndex: 10
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(26, 26, 26, 0.4)',
+          backdropFilter: 'blur(2px)',
+          zIndex: 90
+        }}
+      />
+
+      {/* Slide-over Drawer (35% ширины по ТЗ Раздел 8) */}
+      <div className="lead-drawer" style={{ zIndex: 91 }}>
+        
+        {/* Drawer Header */}
+        <div style={{
+          padding: '20px 24px',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          background: 'var(--color-surface-white)'
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span className="badge badge-verified">
-                <ShieldCheck size={12} /> 100% Прямой заказчик
+              <span className={`grade-badge grade-${lead.grade.toLowerCase()}`}>
+                {lead.grade}
               </span>
-              <span className="badge badge-score">
-                Match: {lead.score}%
+              <span style={{ fontSize: '12px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>
+                Match: <strong>{lead.score}%</strong>
+              </span>
+              <span className="badge badge-verified">
+                <ShieldCheck size={12} /> Прямой заказчик
               </span>
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-black)', letterSpacing: '-0.02em' }}>
+            
+            <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-text-black)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               {lead.company}
             </h2>
             <div style={{ fontSize: '13px', color: 'var(--color-text-headline)', marginTop: '2px' }}>
-              {lead.industry} • {lead.source}
+              Отрасль: <span style={{ color: 'var(--color-text-body)', fontWeight: 500 }}>{lead.industry}</span>
             </div>
           </div>
 
           <button 
             onClick={onClose}
-            style={{ 
-              background: 'var(--color-surface-beige-3)', 
-              border: 'none', 
-              color: 'var(--color-text-headline)', 
-              width: '32px', 
-              height: '32px', 
-              borderRadius: '6px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              cursor: 'pointer' 
-            }}
+            className="btn-icon"
+            style={{ borderRadius: '50%', padding: '6px' }}
+            title="Закрыть карточку"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Drawer Body */}
+        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Quick Actions (Call & TG) */}
-          <div style={{ 
-            background: 'var(--color-surface-beige-1)', 
-            border: '1px solid var(--border-medium)', 
-            borderRadius: '12px', 
-            padding: '18px' 
+          {/* Quick Action Block (Раздел 8.3 ТЗ) */}
+          <div style={{
+            background: 'var(--color-surface-beige-2)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '12px',
+            padding: '16px'
           }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-accent-purple)', marginBottom: '10px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-headline)', marginBottom: '10px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               Быстрая связь с ЛПР
             </div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -118,19 +123,6 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                 >
                   <Phone size={15} />
                   <span>Позвонить: {lead.phone}</span>
-                </a>
-              )}
-
-              {lead.telegram && (
-                <a 
-                  href={`https://t.me/${lead.telegram.replace('@', '')}`} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="btn btn-tg" 
-                  style={{ padding: '9px 16px', fontSize: '13px', borderRadius: '6px' }}
-                >
-                  <Send size={15} />
-                  <span>Написать в TG</span>
                 </a>
               )}
 
@@ -173,13 +165,9 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Должность:</div>
                 <div style={{ color: 'var(--color-text-body)', marginTop: '2px' }}>{lead.role}</div>
               </div>
-              <div>
+              <div style={{ gridColumn: 'span 2' }}>
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Прямой телефон:</div>
                 <div style={{ color: 'var(--color-text-black)', fontWeight: 700, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>{lead.phone || 'Не указан'}</div>
-              </div>
-              <div>
-                <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Telegram профиль:</div>
-                <div style={{ color: 'var(--color-accent-purple)', fontWeight: 600, marginTop: '2px' }}>{lead.telegram || '—'}</div>
               </div>
             </div>
           </div>
@@ -195,8 +183,8 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               </span>
             </div>
             <div style={{ 
-              background: 'var(--color-surface-beige-2)', 
-              padding: '14px', 
+              background: 'var(--color-surface-beige-1)', 
+              padding: '12px', 
               borderRadius: '8px', 
               borderLeft: '3px solid var(--color-accent-purple)',
               fontSize: '13px', 

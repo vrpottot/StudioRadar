@@ -3,27 +3,21 @@ import {
   Loader2, 
   ShieldCheck, 
   PhoneCall, 
-  Sparkles,
-  Search,
-  Target,
-  Send
+  Search, 
+  Target
 } from 'lucide-react';
 
 export default function Header({ 
-  onAiHunt,
-  isAiHunting,
-  onHhScan,
-  isHhScanning,
-  onTgScan,
-  isTgScanning,
+  onFullScan,
+  isScanningAll,
   leadsCount,
   aiProgressMessage
 }) {
   return (
     <header className="top-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
         {/* Left: Title & Status indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-black)', letterSpacing: '-0.02em' }}>
               Поток B2B-заявок
@@ -58,68 +52,37 @@ export default function Header({
           </div>
         </div>
 
-        {/* Right: Actions */}
+        {/* Right: Unified Action Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* HeadHunter Scan Button */}
           <button 
-            onClick={onHhScan} 
-            disabled={isHhScanning || isAiHunting || isTgScanning}
-            className="btn btn-outline"
-            style={{ padding: '8px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            title="Просканировать свежие вакансии-проекты на hh.ru"
-          >
-            {isHhScanning ? (
-              <>
-                <Loader2 size={14} className="spin" />
-                <span>HH.ru поиск...</span>
-              </>
-            ) : (
-              <>
-                <Search size={14} color="var(--color-text-headline)" />
-                <span>Сбор с HH.ru</span>
-              </>
-            )}
-          </button>
-
-          {/* Telegram Channels Scan Button */}
-          <button 
-            onClick={onTgScan} 
-            disabled={isTgScanning || isHhScanning || isAiHunting}
-            className="btn btn-outline"
-            style={{ padding: '8px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            title="Собрать заказы из Telegram каналов и чатов"
-          >
-            {isTgScanning ? (
-              <>
-                <Loader2 size={14} className="spin" />
-                <span>TG поиск...</span>
-              </>
-            ) : (
-              <>
-                <Send size={14} color="var(--color-accent-purple)" />
-                <span>Сбор с Telegram</span>
-              </>
-            )}
-          </button>
-
-          {/* Gemini AI Autonomous Lead Hunter Button - Gradly Signature Button */}
-          <button 
-            onClick={onAiHunt} 
-            disabled={isAiHunting || isHhScanning}
-            className="btn btn-primary"
+            onClick={onFullScan} 
+            disabled={isScanningAll}
+            className="btn btn-dark"
             style={{ 
-              minWidth: '200px'
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: 'var(--color-accent-purple)',
+              color: '#ffffff',
+              border: '1px solid var(--color-accent-purple)',
+              boxShadow: '0 2px 6px rgba(59, 42, 96, 0.25)',
+              cursor: isScanningAll ? 'not-allowed' : 'pointer'
             }}
+            title="Запустить сквозной поиск по всем источникам (Web Hunter)"
           >
-            {isAiHunting ? (
+            {isScanningAll ? (
               <>
-                <Loader2 size={15} className="spin" />
-                <span>ИИ ищет клиентов…</span>
+                <Loader2 size={14} className="spin" color="#ffffff" />
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>Поиск...</span>
               </>
             ) : (
               <>
-                <Sparkles size={15} />
-                <span>ИИ-Поиск (Gemini)</span>
+                <Search size={14} color="#ffffff" />
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>Поиск</span>
               </>
             )}
           </button>
@@ -133,15 +96,16 @@ export default function Header({
           background: 'var(--color-surface-beige-1)',
           border: '1px solid var(--color-accent-lavender)',
           borderRadius: '6px',
-          padding: '6px 12px',
+          padding: '8px 14px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           fontSize: '12px',
-          color: 'var(--color-accent-purple)'
+          color: 'var(--color-accent-purple)',
+          animation: 'fadeIn 0.2s ease'
         }}>
-          <Sparkles size={14} color="var(--color-accent-purple)" className={isAiHunting ? "spin" : ""} />
-          <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>ИИ-Ассистент:</span>
+          <Search size={14} color="var(--color-accent-purple)" className={isScanningAll ? "spin" : ""} />
+          <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>Мониторинг:</span>
           <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {aiProgressMessage}
           </span>

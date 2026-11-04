@@ -9,11 +9,12 @@ import {
   Clock, 
   ExternalLink, 
   ShieldCheck, 
-  Send, 
   Search, 
   Activity,
   ArrowUpRight,
-  Filter
+  Filter,
+  FileText,
+  Globe
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, getLeadGrade, LEAD_GRADES } from '../data/leadsData';
 
@@ -331,20 +332,20 @@ export default function OverviewView({
               Состояние источников данных
             </div>
             <span style={{ fontSize: '11px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>
-              3 модуля подключено
+              3 источника подключено
             </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Telegram */}
+            {/* ЕИС Закупки */}
             <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--color-surface-beige-1)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#e0e1f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Send size={16} color="var(--color-accent-purple)" />
+                  <FileText size={16} color="var(--color-accent-purple)" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-black)' }}>Telegram Каналы и Чаты</div>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>9 каналов мониторинга (Web + MTProto)</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-black)' }}>ЕИС Закупки (Тендеры)</div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>44-ФЗ и 223-ФЗ коммерческие конкурсы</div>
                 </div>
               </div>
               <span className="badge badge-verified" style={{ fontSize: '11px' }}>
@@ -352,23 +353,7 @@ export default function OverviewView({
               </span>
             </div>
 
-            {/* HeadHunter */}
-            <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--color-surface-beige-1)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#fdf0e6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Search size={16} color="#7b3306" />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-black)' }}>HeadHunter (hh.ru)</div>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>7 проектных запросов по 3D/CGI</div>
-                </div>
-              </div>
-              <span className="badge badge-verified" style={{ fontSize: '11px' }}>
-                Активен
-              </span>
-            </div>
-
-            {/* AI Autonomous Hunter */}
+            {/* ИИ-Хантер (Web Search) */}
             <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--color-surface-beige-1)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'var(--accent-emerald-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -376,11 +361,27 @@ export default function OverviewView({
                 </div>
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-black)' }}>ИИ-Хантер (Web Search)</div>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Поиск тендеров и коммерческих интентов</div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Автономный поиск в сети через LLM</div>
                 </div>
               </div>
               <span className="badge badge-verified" style={{ fontSize: '11px' }}>
-                Готов к запуску
+                Активен
+              </span>
+            </div>
+
+            {/* Habr Design */}
+            <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--color-surface-beige-1)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'var(--color-surface-beige-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Globe size={16} color="var(--color-accent-purple)" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-black)' }}>Habr Design & Медиа</div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Кейсы компаний и анонсы редизайнов</div>
+                </div>
+              </div>
+              <span className="badge badge-verified" style={{ fontSize: '11px' }}>
+                Онлайн
               </span>
             </div>
           </div>

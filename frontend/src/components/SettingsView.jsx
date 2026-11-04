@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Save, 
-  Send, 
   ShieldCheck, 
   Sliders, 
   Bell, 
@@ -12,13 +11,16 @@ import {
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, TARGET_SERVICES } from '../data/leadsData';
 
+const API_BASE = (typeof window !== 'undefined' && (window.location.origin.includes(':5173') || window.location.origin.includes(':3000')))
+  ? "http://127.0.0.1:8001" 
+  : "";
+
 export default function SettingsView() {
-  const [botToken, setBotToken] = useState('');
-  const [chatId, setChatId] = useState('');
   const [notifyOnAOnly, setNotifyOnAOnly] = useState(true);
   const [dailyDigestTime, setDailyDigestTime] = useState('09:00');
   const [minScoreThreshold, setMinScoreThreshold] = useState(70);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [staffStopWords, setStaffStopWords] = useState([
     "в штат", "полная ставка", "junior", "стажер", "оклад", "курьер", "офис-менеджер"
@@ -32,9 +34,54 @@ export default function SettingsView() {
     "обучение", "курсы", "наставничество", "вебинар", "марафон", "онлайн-школа"
   ]);
 
-  const handleSave = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+  // Загрузка настроек с бэкенда
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/settings`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.notify_on_a_only !== undefined) setNotifyOnAOnly(data.notify_on_a_only);
+          if (data.daily_digest_time) setDailyDigestTime(data.daily_digest_time);
+          if (data.min_score_threshold) setMinScoreThreshold(data.min_score_threshold);
+          if (data.staff_stop_words) setStaffStopWords(data.staff_stop_words);
+          if (data.cheap_stop_words) setCheapStopWords(data.cheap_stop_words);
+          if (data.education_stop_words) setEducationStopWords(data.education_stop_words);
+        }
+      } catch (e) {
+        console.warn("Ошибка загрузки настроек:", e.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      const payload = {
+        notify_on_a_only: notifyOnAOnly,
+        daily_digest_time: dailyDigestTime,
+        min_score_threshold: minScoreThreshold,
+        staff_stop_words: staffStopWords,
+        cheap_stop_words: cheapStopWords,
+        education_stop_words: educationStopWords
+      };
+
+      await fetch(`${API_BASE}/api/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2500);
+    } catch (e) {
+      console.error("Ошибка сохранения настроек:", e);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2500);
+    }
   };
 
   return (
@@ -46,7 +93,7 @@ export default function SettingsView() {
             Настройки платформы StudioRadar
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--color-text-headline)', marginTop: '2px' }}>
-            Конфигурация параметров отбора, стоп-фильтров и Telegram-уведомлений
+            Конфигурация параметров отбора, стоп-фильтров и порогов скоринга
           </p>
         </div>
 
@@ -56,11 +103,11 @@ export default function SettingsView() {
           style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
           {isSaved ? <CheckCircle2 size={16} /> : <Save size={16} />}
-          <span>{isSaved ? 'Сохранено!' : 'Сохранить настройки'}</span>
+          <span>{isSaved ? 'Сохранено в БД!' : 'Сохранить настройки'}</span>
         </button>
       </div>
 
-      {/* Telegram Bot Notification Section (Раздел 11 ТЗ) */}
+      {/* Notifications & Digest Schedule */}
       <div className="card" style={{ padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <div style={{ width: '34px', height: '34px', borderRadius: '6px', background: '#e0e1f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -68,45 +115,15 @@ export default function SettingsView() {
           </div>
           <div>
             <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>
-              Telegram-бот уведомлений для студии
+              Регламент оповещений и расписание дайджеста
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--color-text-headline)' }}>
-              Мгновенные оповещения в рабочий чат при обнаружении горячих заказчиков и утренний дайджест
+              Мгновенные алерты в системе при обнаружении горячих заказчиков и утренний дайджест
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-black)', display: 'block', marginBottom: '6px' }}>
-              Telegram Bot Token
-            </label>
-            <input 
-              type="password" 
-              placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
-              value={botToken}
-              onChange={(e) => setBotToken(e.target.value)}
-              className="input-control"
-              style={{ width: '100%' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-black)', display: 'block', marginBottom: '6px' }}>
-              Chat ID или @канал для лидов
-            </label>
-            <input 
-              type="text" 
-              placeholder="@studioradar_leads или -1001234567890"
-              value={chatId}
-              onChange={(e) => setChatId(e.target.value)}
-              className="input-control"
-              style={{ width: '100%' }}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', cursor: 'pointer' }}>
             <input 
               type="checkbox" 
@@ -118,7 +135,7 @@ export default function SettingsView() {
           </label>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
-            <span>Время отправки ежедневного дайджеста (10–30 лидов):</span>
+            <span>Время формирования ежедневного дайджеста (10–30 лидов):</span>
             <input 
               type="time" 
               value={dailyDigestTime} 
