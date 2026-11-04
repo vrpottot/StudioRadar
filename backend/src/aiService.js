@@ -102,17 +102,18 @@ export async function callOpenRouter(prompt, isJson = true, modelOverride = null
 }
 
 /**
- * Вызов ИИ через Google Gemini API (gemini-2.0-flash / gemini-1.5-flash)
+ * Вызов ИИ через Google Gemini API (gemini-flash-lite-latest / gemini-3-flash-preview)
  */
 export async function callGemini(prompt, isJson = true) {
-  if (!GEMINI_API_KEY || !GEMINI_API_KEY.startsWith('AIzaSy')) {
-    throw new Error('Требуется валидный ключ Google AI Studio (начинается с AIzaSy)');
+  const apiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || GEMINI_API_KEY || '').trim();
+  if (!apiKey || apiKey.length < 20) {
+    throw new Error('Ключ Google Gemini не настроен');
   }
 
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+  const models = ['gemini-flash-lite-latest', 'gemini-3-flash-preview'];
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const payload = {
         contents: [{ parts: [{ text: prompt }] }]
       };
@@ -349,7 +350,8 @@ export async function callAi(prompt, isJson = true) {
     }
   }
 
-  if (GEMINI_API_KEY && GEMINI_API_KEY.startsWith('AIzaSy')) {
+  const gemKey = (process.env.Google_api || process.env.GEMINI_API_KEY || GEMINI_API_KEY || '').trim();
+  if (gemKey && gemKey.length > 20) {
     try {
       return await callGemini(prompt, isJson);
     } catch (e) {
@@ -365,8 +367,9 @@ export async function callAi(prompt, isJson = true) {
  * Глубокий анализ лида
  */
 export async function analyzeLeadWithAi(rawText, sourceName = "Интернет") {
+  const gemKey = (process.env.Google_api || process.env.GEMINI_API_KEY || GEMINI_API_KEY || '').trim();
   // Если настроен внешний ИИ, отправляем промпт
-  if ((OPENROUTER_API_KEY && !OPENROUTER_API_KEY.includes('sk-b31c92650739')) || (GEMINI_API_KEY && GEMINI_API_KEY.startsWith('AIzaSy'))) {
+  if ((OPENROUTER_API_KEY && !OPENROUTER_API_KEY.includes('sk-b31c92650739')) || (gemKey && gemKey.length > 20)) {
     const prompt = `
 Ты — опытный коммерческий директор дизайн- и CGI-студии (специализация: 3D/2D моушн-дизайн, AI-видео, 3D анимация, интерактивные 3D сайты).
 Определи целевого прямого заказчика и сформируй оффер студии.
