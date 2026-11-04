@@ -1,9 +1,17 @@
 import axios from 'axios';
 import https from 'https';
 import * as cheerio from 'cheerio';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { analyzeLeadWithAi, searchLeadsWithGoogleGemini } from './aiService.js';
 import { extractPhones } from './phoneExtractor.js';
 import { db } from './db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -28,13 +36,14 @@ const TARGET_TENDER_QUERIES = [
 ];
 
 /**
- * Парсер государственных и коммерческих тендеров ЕИС Закупки (44-ФЗ и 223-ФЗ)
- * Собирает реальные технические задания, бюджеты и контакты заказчиков
+ * Парсер крупных корпоративных коммерческих закупок (223-ФЗ)
+ * Собирает реальные коммерческие ТЗ корпораций, заводов, холдингов и брендов (исключая школы и бюджетные МБУ)
  */
 async function scrapeDirectTenders(query, limit = 5) {
   try {
     const encoded = encodeURIComponent(query);
-    const url = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${encoded}&fz44=on&fz223=on&recordsPerPage=_${limit}`;
+    // Исключительно 223-ФЗ (корпорации, холдинги, коммерческие предприятия)
+    const url = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${encoded}&fz223=on&recordsPerPage=_${limit * 2}`;
     
     const res = await axios.get(url, {
       httpsAgent: agent,
@@ -55,6 +64,10 @@ async function scrapeDirectTenders(query, limit = 5) {
       const tenderUrl = linkRel.startsWith('http') ? linkRel : `https://zakupki.gov.ru${linkRel}`;
       const regNumber = $(el).find('.registry-entry__header-mid__number a').text().trim();
 
+      // СТРОГО исключаем бюджетные школы, колледжи, детские сады, поликлиники и сельские дома культуры
+      const isBudgetInstitution = /(?:школ|колледж|детск|больниц|поликлиник|вуз|университет|дворец культуры|библиотек|ясли)/i.test(customer + ' ' + title);
+      if (isBudgetInstitution) return;
+
       // Проверяем, что в названии закупки явно указаны ключевые услуги студии
       if (title && customer && /видео|ролик|3d|график|моушн|анимац|фильм|cgi|визуал/i.test(title)) {
         rawTenders.push({ title, customer, price, tenderUrl, regNumber });
@@ -63,7 +76,7 @@ async function scrapeDirectTenders(query, limit = 5) {
 
     return rawTenders;
   } catch (err) {
-    console.warn(`[AI Hunter] Ошибка ЕИС Закупки по запросу «${query}»:`, err.message);
+    console.warn(`[AI Hunter] Ошибка ЕИС Закупки (223-ФЗ) по запросу «${query}»:`, err.message);
     return [];
   }
 }
@@ -102,40 +115,48 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
 
   log('🚀 ИИ запускает поиск прямых заказов, тендеров и заявок на видеопроизводство и 3D графику...');
 
-  // 1. Поиск прямых коммерческих заказчиков через Google Gemini со встроенным поиском Google
+  // 1. Поиск прямых коммерческих заказчиков через Google Gemini
   const apiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
-  if (apiKey && apiKey.startsWith('AIzaSy')) {
-    log('🌐 Запуск чистого поиска в интернете через Google Gemini (Google Search Grounding)...');
+  if (apiKey && apiKey.length > 20) {
+    log('🌐 Запуск чистого интернет-поиска прямых B2B заказчиков через Google Gemini...');
     try {
-      const geminiLeads = await searchLeadsWithGoogleGemini();
-      if (geminiLeads && geminiLeads.length > 0) {
-        log(`✨ Google Gemini нашел в интернете ${geminiLeads.length} актуальных коммерческих запросов!`);
-        for (const gl of geminiLeads) {
-          const leadRecord = {
-            id: `google-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            company: gl.company,
-            industry: gl.industry || "Рекламные агентства и продакшн",
-            service: gl.service || "3D моушен-дизайн и анимация",
-            request_text: gl.request_text,
-            budget: gl.budget || "По согласованию",
-            source: "Google Поиск (ИИ Gemini)",
-            source_type: "web",
-            url: gl.url || "",
-            contact_name: gl.contact_name || "Отдел маркетинга / Закупок",
-            role: gl.role || "ЛПР проекта",
-            phone: gl.phone || null,
-            telegram: null,
-            email: gl.email || null,
-            suggested_solution: gl.suggested_solution || `Подготовка коммерческого предложения по направлению «${gl.service}».`,
-            score: gl.score || 92,
-            verified_direct: true,
-            status: gl.phone ? "new" : (gl.email ? "in_review" : "contacts_unconfirmed"),
-            created_at: new Date().toISOString()
-          };
-          const saved = await db.addLead(leadRecord);
-          if (saved) {
-            allLeads.push(saved);
-            log(`🔥 Добавлен коммерческий заказчик из Google: ${gl.company}`);
+      const searchTopics = [
+        "3D визуализация продуктов, CGI графика и моушн-дизайн для брендов",
+        "Презентационные видеоролики и 3D анимация для девелоперов, финтеха и промышленности"
+      ];
+
+      for (const topic of searchTopics) {
+        log(`🔎 ИИ анализирует открытые B2B запросы по направлению: «${topic}»...`);
+        const geminiLeads = await searchLeadsWithGoogleGemini(topic);
+        if (geminiLeads && geminiLeads.length > 0) {
+          log(`✨ Google Gemini выделил ${geminiLeads.length} актуальных коммерческих запросов!`);
+          for (const gl of geminiLeads) {
+            const leadRecord = {
+              id: `direct-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              company: gl.company,
+              industry: gl.industry || "Рекламные агентства и продакшн",
+              service: gl.service || "3D моушен-дизайн и анимация",
+              request_text: gl.request_text,
+              budget: gl.budget || "По согласованию",
+              source: "Web-поиск (Прямой заказчик)",
+              source_type: "direct",
+              url: gl.url || "",
+              contact_name: gl.contact_name || "Отдел маркетинга / Бренд-директор",
+              role: gl.role || "ЛПР проекта",
+              phone: gl.phone || null,
+              telegram: null,
+              email: gl.email || null,
+              suggested_solution: gl.suggested_solution || `Подготовка коммерческого предложения по направлению «${gl.service}».`,
+              score: gl.score || 93,
+              verified_direct: true,
+              status: gl.phone ? "new" : (gl.email ? "in_review" : "contacts_unconfirmed"),
+              created_at: new Date().toISOString()
+            };
+            const saved = await db.addLead(leadRecord);
+            if (saved) {
+              allLeads.push(saved);
+              log(`🔥 Добавлен коммерческий заказчик из Web: ${gl.company} (${gl.budget})`);
+            }
           }
         }
       }
@@ -144,14 +165,14 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
     }
   }
 
-  // 2. Поиск официальных коммерческих и государственных тендеров ЕИС
+  // 2. Поиск крупных корпоративных коммерческих закупок (223-ФЗ)
   const shuffledQueries = [...TARGET_TENDER_QUERIES].sort(() => 0.5 - Math.random());
   const selectedQueries = shuffledQueries.slice(0, 2);
 
   for (const query of selectedQueries) {
-    log(`🔍 Поиск активных коммерческих заказов по направлению: «${query}»...`);
-    const tenders = await scrapeDirectTenders(query, 4);
-    log(`Найдено ${tenders.length} прямых заказов по «${query}». Анализ требований заказчиков...`);
+    log(`🔍 Поиск активных корпоративных закупок (223-ФЗ) по направлению: «${query}»...`);
+    const tenders = await scrapeDirectTenders(query, 3);
+    log(`Найдено ${tenders.length} корпоративных заказов по «${query}». Анализ требований заказчиков...`);
 
     for (const tender of tenders) {
       try {
@@ -176,10 +197,10 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
 
         const phone = contacts.phone;
         const email = contacts.email;
-        if (phone) log(`📞 Найден телефон контрактного управляющего: ${phone}`);
+        if (phone) log(`📞 Найден телефон ответственного: ${phone}`);
         if (email) log(`✉️ Найден email отдела закупок: ${email}`);
 
-        const leadId = `tender-${tender.regNumber || Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const leadId = `corp-${tender.regNumber || Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const leadRecord = {
           id: leadId,
           company: tender.customer,
@@ -187,7 +208,7 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
           service: service,
           request_text: `${tender.title}. ${email ? 'Email: ' + email : ''}`,
           budget: tender.price || "По согласованию",
-          source: "ЕИС Закупки (Гос/Комм тендер)",
+          source: "Корпоративный тендер (223-ФЗ)",
           source_type: "tender",
           url: tender.tenderUrl,
           contact_name: "Отдел закупок / Тендерный комитет",
@@ -205,7 +226,7 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
         const saved = await db.addLead(leadRecord);
         if (saved) {
           allLeads.push(saved);
-          log(`🔥 В базу добавлен подтвержденный заказ: ${tender.customer.slice(0, 35)} (${tender.price})`);
+          log(`🔥 В базу добавлен корпоративный заказ: ${tender.customer.slice(0, 35)} (${tender.price})`);
         }
       } catch (err) {
         console.warn('[AI Hunter] Ошибка обработки заказа:', err.message);
