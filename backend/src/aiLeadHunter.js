@@ -1,7 +1,7 @@
 import axios from 'axios';
 import https from 'https';
 import * as cheerio from 'cheerio';
-import { analyzeLeadWithAi } from './aiService.js';
+import { analyzeLeadWithAi, searchLeadsWithGoogleGemini } from './aiService.js';
 import { extractPhones } from './phoneExtractor.js';
 import { db } from './db.js';
 
@@ -102,7 +102,49 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
 
   log('🚀 ИИ запускает поиск прямых заказов, тендеров и заявок на видеопроизводство и 3D графику...');
 
-  // Выбираем 2 разных направления для сканирования за один проход
+  // 1. Поиск прямых коммерческих заказчиков через Google Gemini со встроенным поиском Google
+  const apiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
+  if (apiKey && apiKey.startsWith('AIzaSy')) {
+    log('🌐 Запуск чистого поиска в интернете через Google Gemini (Google Search Grounding)...');
+    try {
+      const geminiLeads = await searchLeadsWithGoogleGemini();
+      if (geminiLeads && geminiLeads.length > 0) {
+        log(`✨ Google Gemini нашел в интернете ${geminiLeads.length} актуальных коммерческих запросов!`);
+        for (const gl of geminiLeads) {
+          const leadRecord = {
+            id: `google-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            company: gl.company,
+            industry: gl.industry || "Рекламные агентства и продакшн",
+            service: gl.service || "3D моушен-дизайн и анимация",
+            request_text: gl.request_text,
+            budget: gl.budget || "По согласованию",
+            source: "Google Поиск (ИИ Gemini)",
+            source_type: "web",
+            url: gl.url || "",
+            contact_name: gl.contact_name || "Отдел маркетинга / Закупок",
+            role: gl.role || "ЛПР проекта",
+            phone: gl.phone || null,
+            telegram: null,
+            email: gl.email || null,
+            suggested_solution: gl.suggested_solution || `Подготовка коммерческого предложения по направлению «${gl.service}».`,
+            score: gl.score || 92,
+            verified_direct: true,
+            status: gl.phone ? "new" : (gl.email ? "in_review" : "contacts_unconfirmed"),
+            created_at: new Date().toISOString()
+          };
+          const saved = await db.addLead(leadRecord);
+          if (saved) {
+            allLeads.push(saved);
+            log(`🔥 Добавлен коммерческий заказчик из Google: ${gl.company}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[AI Hunter] Ошибка поиска Google Gemini:', e.message);
+    }
+  }
+
+  // 2. Поиск официальных коммерческих и государственных тендеров ЕИС
   const shuffledQueries = [...TARGET_TENDER_QUERIES].sort(() => 0.5 - Math.random());
   const selectedQueries = shuffledQueries.slice(0, 2);
 

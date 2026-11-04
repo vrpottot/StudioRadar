@@ -139,6 +139,83 @@ export async function callGemini(prompt, isJson = true) {
 }
 
 /**
+ * Автономный поиск прямых заказчиков через Google Gemini со встроенным Google Search
+ * Модель выходит напрямую в живой Google Search, находит реальные компании с задачами на 3D/видео
+ */
+export async function searchLeadsWithGoogleGemini(queryTopic = "3D моушен-дизайн, видеоролики и CGI графика") {
+  const apiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey || !apiKey.startsWith('AIzaSy')) {
+    return null;
+  }
+
+  const prompt = `
+Ты — опытный коммерческий директор CGI-студии (специализация: 3D/2D моушн-дизайн, 3D анимация, презентационные видеоролики, CGI графика).
+Сделай поиск в Google и найди свежие реальные коммерческие компании, бренды или организации в России, которые недавно опубликовали открытый запрос, тендер, конкурс или техническое задание на:
+${queryTopic}
+
+СТРОГО ИСКЛЮЧИ:
+- Фрилансеров и соискателей, продающих свои услуги
+- Биржи мелкого фриланса и нарезку рилсов/shorts
+- Рутинный найм в штат на оклад
+
+Найди 3-5 РЕАЛЬНЫХ организаций или брендов с их конкретной задачей.
+Верни ответ СТРОГО в формате JSON массива объектов:
+[
+  {
+    "company": "Точное название компании/организации",
+    "industry": "Продукты питания и напитки | Авто и мото индустрия | Банки и финансы | Газ и нефть | Бьюти | Электротехника | Рекламные агентства и продакшн",
+    "service": "3D моушен-дизайн и анимация | 2D моушен-дизайн и анимация | ИИ видеоролики и графика | 2D и 3D мультипликация | 3D Web-приложения и интерактив",
+    "request_text": "Точное описание задачи/потребности заказчика (суть ТЗ)",
+    "budget": "Бюджет (например, 'от 500 000 ₽' или сумма из публикации)",
+    "url": "Ссылка на официальный сайт компании или страницу запроса",
+    "contact_name": "Контактное лицо или 'Отдел закупок / Маркетинг'",
+    "role": "Должность",
+    "phone": null,
+    "email": null,
+    "score": 92,
+    "suggested_solution": "Персонализированное предложение студии под эту задачу"
+  }
+]
+`;
+
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ googleSearch: {} }],
+        generationConfig: {
+          temperature: 0.2
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.candidates && data.candidates[0]?.content?.parts) {
+        const textPart = data.candidates[0].content.parts.find(p => p.text)?.text || '';
+        const cleaned = textPart.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+        const jsonMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(`[Gemini Google Search] Ошибка модели ${model}:`, e.message);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Встроенный автономный семантический ИИ-движок StudioRadar
  * Работает 100% без внешних платных API или ключей с мгновенной квалификацией и генерацией оффера
  */
