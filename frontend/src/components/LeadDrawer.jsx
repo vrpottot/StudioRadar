@@ -61,14 +61,31 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(26, 26, 26, 0.4)',
-          backdropFilter: 'blur(2px)',
-          zIndex: 90
+          background: 'rgba(26, 26, 26, 0.45)',
+          backdropFilter: 'blur(3px)',
+          zIndex: 1000
         }}
       />
 
-      {/* Slide-over Drawer (35% ширины по ТЗ Раздел 8) */}
-      <div className="lead-drawer" style={{ zIndex: 91 }}>
+      {/* Slide-over Drawer (Правая панель 540px) */}
+      <div 
+        className="lead-drawer drawer slide-in-right" 
+        style={{ 
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          height: '100vh',
+          width: '540px',
+          maxWidth: '92vw',
+          background: '#ffffff',
+          borderLeft: '1px solid var(--border-subtle)',
+          boxShadow: '-8px 0 36px rgba(0, 0, 0, 0.18)',
+          zIndex: 1001,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         
         {/* Drawer Header */}
         <div style={{
@@ -77,7 +94,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
-          background: 'var(--color-surface-white)'
+          background: 'var(--color-surface-white)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>

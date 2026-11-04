@@ -404,7 +404,7 @@ h1, h2, h3, h4, .brand-font {
   z-index: 100;
 }
 
-.drawer {
+.drawer, .lead-drawer {
   position: fixed;
   top: 0;
   right: 0;
