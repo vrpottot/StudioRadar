@@ -11,6 +11,7 @@ import SignalsView from './components/SignalsView';
 import SourcesView from './components/SourcesView';
 import SettingsView from './components/SettingsView';
 import { getSavedPipelines, savePipelines } from './data/pipelinesData';
+import { getLeadGrade } from './data/leadsData';
 
 const API_BASE = (typeof window !== 'undefined' && (window.location.origin.includes(':5173') || window.location.origin.includes(':3000')))
   ? "http://127.0.0.1:8001" 
@@ -68,10 +69,13 @@ export default function App() {
             contactName: item.contact_name,
             role: item.role,
             phone: item.phone,
+            telegram: item.telegram,
+            email: item.email,
             source: item.source,
             sourceType: item.source_type,
             budget: item.budget,
             score: item.score,
+            grade: getLeadGrade(item.score || 70),
             verifiedDirect: item.verified_direct,
             requestText: item.request_text,
             suggestedSolution: item.suggested_solution,

@@ -19,7 +19,7 @@ import {
   Send,
   Mail
 } from 'lucide-react';
-import { LEAD_STATUSES } from '../data/leadsData';
+import { LEAD_STATUSES, getLeadGrade } from '../data/leadsData';
 
 export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }) {
   const [copied, setCopied] = useState(false);
@@ -27,6 +27,13 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
   const [savedNote, setSavedNote] = useState(false);
 
   if (!lead) return null;
+
+  const grade = lead.grade || getLeadGrade(lead.score || 70) || 'B';
+  const contactName = lead.contactName || lead.contact_name || 'Отдел маркетинга / Основатель';
+  const role = lead.role || 'ЛПР проекта / CEO';
+  const requestText = lead.requestText || lead.request_text || lead.company;
+  const suggestedSolution = lead.suggestedSolution || lead.suggested_solution || 'Подготовка коммерческого предложения и релевантного портфолио под задачу проекта.';
+  const date = lead.date || (lead.created_at ? lead.created_at.replace('T', ' ').slice(0, 16) : 'Сегодня');
 
   const handleCopyPhone = () => {
     if (!lead.phone) return;
@@ -74,8 +81,8 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span className={`grade-badge grade-${lead.grade.toLowerCase()}`}>
-                {lead.grade}
+              <span className={`grade-badge grade-${grade.toLowerCase()}`}>
+                {grade}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>
                 Match: <strong>{lead.score}%</strong>
@@ -198,11 +205,11 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
               <div>
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>ФИО ЛПР:</div>
-                <div style={{ fontWeight: 700, color: 'var(--color-text-black)', marginTop: '2px' }}>{lead.contactName}</div>
+                <div style={{ fontWeight: 700, color: 'var(--color-text-black)', marginTop: '2px' }}>{contactName}</div>
               </div>
               <div>
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Должность:</div>
-                <div style={{ color: 'var(--color-text-body)', marginTop: '2px' }}>{lead.role}</div>
+                <div style={{ color: 'var(--color-text-body)', marginTop: '2px' }}>{role}</div>
               </div>
               <div>
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Прямой телефон:</div>
@@ -237,11 +244,11 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               color: 'var(--color-text-black)',
               fontStyle: 'italic'
             }}>
-              "{lead.requestText}"
+              "{requestText}"
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: 'var(--color-text-headline)' }}>
               <span>Ориентировочный бюджет: <strong style={{ color: 'var(--color-text-black)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>{lead.budget}</strong></span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>Сигнал: {lead.date}</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>Сигнал: {date}</span>
             </div>
           </div>
 
@@ -252,7 +259,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               <span>Рекомендуемое предложение студии</span>
             </div>
             <div style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--color-text-body)' }}>
-              {lead.suggestedSolution}
+              {suggestedSolution}
             </div>
           </div>
 
@@ -263,7 +270,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               <span>Готовый скрипт для созвона с ЛПР</span>
             </div>
             <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--color-text-body)' }}>
-              «Добрый день, {lead.contactName}! Меня зовут [Имя], студия графики. Увидели ваш запрос на {lead.service} для {lead.company}. Мы специализируемся именно на сфере «{lead.industry}» и недавно делали подобную визуализацию/3D-интерактив. Готовы показать релевантный кейс и подготовить смету за 24 часа. Удобно ли сейчас уделить 2 минуты?»
+              «Добрый день, {contactName}! Меня зовут [Имя], студия графики. Увидели ваш запрос на {lead.service} для {lead.company}. Мы специализируемся именно на сфере «{lead.industry}» и недавно делали подобную визуализацию/3D-интерактив. Готовы показать релевантный кейс и подготовить смету за 24 часа. Удобно ли сейчас уделить 2 минуты?»
             </div>
           </div>
 
