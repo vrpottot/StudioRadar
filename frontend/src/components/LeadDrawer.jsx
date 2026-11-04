@@ -15,7 +15,9 @@ import {
   MessageSquare,
   HelpCircle,
   PhoneCall,
-  ExternalLink
+  ExternalLink,
+  Send,
+  Mail
 } from 'lucide-react';
 import { LEAD_STATUSES } from '../data/leadsData';
 
@@ -119,10 +121,47 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                 <a 
                   href={`tel:${lead.phone}`} 
                   className="btn btn-call" 
-                  style={{ flex: 1, minWidth: '200px', padding: '9px 16px', fontSize: '13px', borderRadius: '6px', fontFamily: 'var(--font-mono)' }}
+                  style={{ flex: 1, minWidth: '160px', padding: '9px 16px', fontSize: '13px', borderRadius: '6px', fontFamily: 'var(--font-mono)' }}
                 >
                   <Phone size={15} />
                   <span>Позвонить: {lead.phone}</span>
+                </a>
+              )}
+
+              {lead.telegram && (
+                <a 
+                  href={lead.telegram.startsWith('http') ? lead.telegram : `https://t.me/${lead.telegram.replace('@', '')}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="btn" 
+                  style={{ 
+                    padding: '9px 14px', 
+                    fontSize: '13px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    borderRadius: '6px',
+                    background: '#229ED9',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 600
+                  }}
+                  title="Написать в Telegram"
+                >
+                  <Send size={14} />
+                  <span>Telegram</span>
+                </a>
+              )}
+
+              {lead.email && (
+                <a 
+                  href={`mailto:${lead.email}`} 
+                  className="btn btn-outline" 
+                  style={{ padding: '9px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px' }}
+                  title={`Написать на почту: ${lead.email}`}
+                >
+                  <Mail size={14} />
+                  <span>Email</span>
                 </a>
               )}
 
@@ -133,10 +172,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                   rel="noreferrer"
                   className="btn btn-outline" 
                   style={{ padding: '9px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px' }}
-                  title="Открыть оригинальную страницу заказа"
+                  title="Открыть сайт компании / оригинальную страницу"
                 >
                   <ExternalLink size={14} />
-                  <span>Открыть заказ</span>
+                  <span>Сайт компании</span>
                 </a>
               )}
 
@@ -165,9 +204,15 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Должность:</div>
                 <div style={{ color: 'var(--color-text-body)', marginTop: '2px' }}>{lead.role}</div>
               </div>
-              <div style={{ gridColumn: 'span 2' }}>
+              <div>
                 <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Прямой телефон:</div>
-                <div style={{ color: 'var(--color-text-black)', fontWeight: 700, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>{lead.phone || 'Не указан'}</div>
+                <div style={{ color: 'var(--color-text-black)', fontWeight: 700, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>{lead.phone || 'В поиске'}</div>
+              </div>
+              <div>
+                <div style={{ color: 'var(--color-text-headline)', fontSize: '11px' }}>Telegram / Почта:</div>
+                <div style={{ color: 'var(--color-accent-purple)', fontWeight: 600, marginTop: '2px', fontSize: '12px', wordBreak: 'break-all' }}>
+                  {lead.telegram ? lead.telegram.replace('https://t.me/', '@') : (lead.email || '—')}
+                </div>
               </div>
             </div>
           </div>

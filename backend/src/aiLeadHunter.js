@@ -1,8 +1,8 @@
 import axios from 'axios';
 import https from 'https';
 import * as cheerio from 'cheerio';
-import { analyzeLeadWithAi } from './geminiService.js';
-import { extractPhoneFromWebsite, lookupCompanyPhone, extractPhones } from './phoneExtractor.js';
+import { analyzeLeadWithAi } from './aiService.js';
+import { extractContactsFromWebsite, extractPhones } from './phoneExtractor.js';
 import { db } from './db.js';
 
 const agent = new https.Agent({ rejectUnauthorized: false });
@@ -13,7 +13,6 @@ const HEADERS = {
   'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8'
 };
 
-// Ключевые поисковые запросы по закупкам и коммерческим заказам видео / графики
 const TENDER_QUERIES = [
   'видеоролик',
   '3D графика',
@@ -25,24 +24,209 @@ const TENDER_QUERIES = [
 ];
 
 /**
- * Парсер коммерческих и государственных тендеров (ЕИС Закупки / 44-ФЗ и 223-ФЗ)
+ * 1. Автономный сбор свежих технологических стартапов с ProductRadar
  */
-async function scrapeTenders(searchQuery, limit = 5) {
+async function huntProductRadarStartups(onProgress, maxCount = 6) {
+  const discovered = [];
   try {
-    const encoded = encodeURIComponent(searchQuery);
+    if (onProgress) onProgress('🌐 ИИ сканирует платформу запуска стартапов ProductRadar...');
+    const listRes = await axios.get('https://productradar.ru/', { headers: HEADERS, timeout: 8000 });
+    const $ = cheerio.load(listRes.data);
+    const products = [];
+
+    $('article, .post-card, .product-card').each((i, el) => {
+      if (products.length >= maxCount) return;
+      const title = $(el).find('h2, h3, .post-title, a.title').first().text().trim();
+      const link = $(el).find('a[href*="/product/"]').first().attr('href');
+      const desc = $(el).find('.post-excerpt, p, .description').first().text().trim();
+      if (title && link) {
+        products.push({ title, link, desc });
+      }
+    });
+
+    if (onProgress) onProgress(`🚀 Найдено ${products.length} активных стартапов. ИИ начинает глубокий анализ сайтов и контактов...`);
+
+    for (const item of products) {
+      try {
+        if (onProgress) onProgress(`🔍 ИИ исследует стартап «${item.title}»...`);
+
+        const detailRes = await axios.get(item.link, { headers: HEADERS, timeout: 8000 });
+        const $d = cheerio.load(detailRes.data);
+        const pitchText = $d('main, article, .content').text().replace(/\s+/g, ' ');
+
+        // Поиск ссылки на официальный сайт стартапа
+        let companyWebsite = null;
+        $d('a[href^="http"]').each((i, a) => {
+          const href = $d(a).attr('href');
+          if (href && 
+              !href.includes('productradar.ru') && 
+              !href.includes('yandex') && 
+              !href.includes('google') && 
+              !href.includes('vk.com') && 
+              !href.includes('t.me') &&
+              !href.includes('support')) {
+            if (!companyWebsite) companyWebsite = href;
+          }
+        });
+
+        // Поиск Telegram на странице продукта
+        let companyTg = null;
+        $d('a[href*="t.me"]').each((i, a) => {
+          const href = $d(a).attr('href');
+          if (href && !href.includes('productradar') && !href.includes('RadarSupport') && !companyTg) {
+            companyTg = href.split('?')[0];
+          }
+        });
+
+        // Сканирование официального сайта компании на телефон, email и доп. Telegram
+        let websiteContacts = { phone: null, email: null, telegram: null, text: '' };
+        if (companyWebsite) {
+          if (onProgress) onProgress(`🌐 ИИ проверяет официальный сайт ${companyWebsite}...`);
+          websiteContacts = await extractContactsFromWebsite(companyWebsite);
+          if (websiteContacts.telegram && !companyTg) {
+            companyTg = websiteContacts.telegram;
+          }
+        }
+
+        const phone = websiteContacts.phone;
+        const email = websiteContacts.email;
+        if (phone && onProgress) onProgress(`📞 Извлечен подтвержденный телефон: ${phone}`);
+        if (companyTg && onProgress) onProgress(`✈️ Извлечен прямой Telegram: ${companyTg}`);
+
+        // ИИ-анализ и формирование целевого коммерческого предложения
+        const fullContext = `${item.title}. ${item.desc}. ${pitchText.slice(0, 800)} ${websiteContacts.text}`;
+        const aiAnalysis = await analyzeLeadWithAi(fullContext, "ProductRadar");
+
+        const leadId = `startup-${item.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`;
+        const leadRecord = {
+          id: leadId,
+          company: item.title,
+          industry: aiAnalysis.industry || "Электротехника",
+          service: aiAnalysis.service || "3D моушен-дизайн и анимация",
+          request_text: `${item.desc || item.title}. Официальный сайт: ${companyWebsite || item.link}. ${email ? 'Email: ' + email : ''}`,
+          budget: aiAnalysis.estimated_budget || "от 400 000 ₽",
+          source: `ProductRadar (Стартап / Новый продукт)`,
+          source_type: "web",
+          url: companyWebsite || item.link,
+          contact_name: aiAnalysis.contact_name || "Основатель / Бренд-директор",
+          role: aiAnalysis.role || "CEO / Product Lead",
+          phone: phone || null,
+          telegram: companyTg || null,
+          email: email || null,
+          suggested_solution: aiAnalysis.personalized_pitch || `Разработка презентационного 3D-видеоролика продукта «${item.title}» для инвесторов и лендинга.`,
+          score: phone ? 95 : (companyTg || email ? 90 : 85),
+          verified_direct: true,
+          status: phone ? "new" : "contacts_unconfirmed",
+          created_at: new Date().toISOString()
+        };
+
+        const saved = await db.addLead(leadRecord);
+        if (saved) {
+          discovered.push(saved);
+          if (onProgress) onProgress(`🎯 Добавлен прямой заказчик: ${item.title} (Score: ${leadRecord.score}%)`);
+        }
+      } catch (e) {
+        console.warn(`[AI Hunter] Ошибка анализа стартапа ${item.title}:`, e.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[AI Hunter] Ошибка ProductRadar:', err.message);
+  }
+  return discovered;
+}
+
+/**
+ * 2. Автономный сбор компаний с инвестициями и новыми раундами (RB.ru / Rusbase)
+ */
+async function huntVentureDeals(onProgress, maxCount = 4) {
+  const discovered = [];
+  try {
+    if (onProgress) onProgress('📊 ИИ сканирует венчурные сделки и раунды инвестиций (RB.ru)...');
+    const res = await axios.get('https://rb.ru/feeds/all/', { headers: HEADERS, timeout: 8000 });
+    const $ = cheerio.load(res.data, { xmlMode: true });
+    const items = [];
+
+    $('item').each((i, el) => {
+      if (items.length >= maxCount * 2) return;
+      const title = $(el).find('title').text().trim();
+      const link = $(el).find('link').text().trim();
+      const desc = $(el).find('description').text().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // Фильтруем компании с бюджетами: инвестиции, запуск, сервис, продукт, масштабирование
+      if (/стартап|инвестиц|привлек|раунд|миллион|запуск|сервис|платформ|нейросет/i.test(title + ' ' + desc)) {
+        items.push({ title, link, desc });
+      }
+    });
+
+    for (const item of items.slice(0, maxCount)) {
+      try {
+        const fullText = `${item.title}. ${item.desc}`;
+        const aiAnalysis = await analyzeLeadWithAi(fullText, "RB.ru");
+
+        if (aiAnalysis.is_real_client && 
+            aiAnalysis.company_name && 
+            aiAnalysis.company_name !== "Прямой бренд" && 
+            aiAnalysis.company_name !== "Технологический бренд" &&
+            aiAnalysis.company_name.length > 2) {
+          const leadId = `rb-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          const leadRecord = {
+            id: leadId,
+            company: aiAnalysis.company_name,
+            industry: aiAnalysis.industry || "Банки и финансы",
+            service: aiAnalysis.service || "3D моушен-дизайн и анимация",
+            request_text: `${item.title}. Проект масштабирует продукт и привлекает капитал.`,
+            budget: aiAnalysis.estimated_budget || "от 500 000 ₽",
+            source: "RB.ru (Венчур и Инвестиции)",
+            source_type: "web",
+            url: item.link,
+            contact_name: "Основатель / Руководитель направления",
+            role: "CEO / CMO",
+            phone: null,
+            telegram: null,
+            suggested_solution: aiAnalysis.personalized_pitch || `Подготовка имиджевого 3D-видеоролика компании «${aiAnalysis.company_name}» под новый инвест-раунд.`,
+            score: 86,
+            verified_direct: true,
+            status: "contacts_unconfirmed",
+            created_at: new Date().toISOString()
+          };
+
+          const saved = await db.addLead(leadRecord);
+          if (saved) {
+            discovered.push(saved);
+            if (onProgress) onProgress(`💼 Обнаружен венчурный заказчик: ${aiAnalysis.company_name}`);
+          }
+        }
+      } catch (e) {}
+    }
+  } catch (err) {
+    console.warn('[AI Hunter] Ошибка RB.ru:', err.message);
+  }
+  return discovered;
+}
+
+/**
+ * 3. Мониторинг коммерческих и государственных закупок (ЕИС Закупки)
+ */
+async function huntTenders(onProgress, limit = 4) {
+  const discovered = [];
+  try {
+    const query = TENDER_QUERIES[Math.floor(Math.random() * TENDER_QUERIES.length)];
+    if (onProgress) onProgress(`🏛️ ИИ сканирует открытые коммерческие тендеры по запросу «${query}»...`);
+
+    const encoded = encodeURIComponent(query);
     const url = `https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=${encoded}&fz44=on&fz223=on&recordsPerPage=_${limit}`;
     
     const res = await axios.get(url, {
       httpsAgent: agent,
       headers: HEADERS,
-      timeout: 10000
+      timeout: 9000
     });
 
     const $ = cheerio.load(res.data);
-    const tenders = [];
+    const rawTenders = [];
 
     $('.search-registry-entry-block').each((i, el) => {
-      if (i >= limit) return;
+      if (rawTenders.length >= limit) return;
 
       const title = $(el).find('.registry-entry__body-value').text().trim().replace(/\s+/g, ' ');
       const customer = $(el).find('.registry-entry__body-href a').text().trim().replace(/\s+/g, ' ');
@@ -52,197 +236,87 @@ async function scrapeTenders(searchQuery, limit = 5) {
       const regNumber = $(el).find('.registry-entry__header-mid__number a').text().trim();
 
       if (title && customer) {
-        tenders.push({
-          title,
-          customer,
-          price: price || 'По согласованию',
-          url: tenderUrl,
-          regNumber,
-          source_type: 'tender_eis'
-        });
+        rawTenders.push({ title, customer, price, tenderUrl, regNumber });
       }
     });
 
-    return tenders;
+    for (const tender of rawTenders) {
+      try {
+        let phone = null;
+        let email = null;
+
+        // Попробуем извлечь контакты закупки
+        try {
+          const detailRes = await axios.get(tender.tenderUrl, { httpsAgent: agent, headers: HEADERS, timeout: 6000 });
+          const $d = cheerio.load(detailRes.data);
+          const bodyText = $d('body').text().replace(/\s+/g, ' ');
+          const phones = extractPhones(bodyText);
+          if (phones.length > 0) phone = phones[0];
+          const emailMatch = bodyText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+          if (emailMatch) email = emailMatch[0];
+        } catch (e) {}
+
+        const aiAnalysis = await analyzeLeadWithAi(`${tender.title}. Заказчик: ${tender.customer}`, "ЕИС Закупки");
+
+        const leadRecord = {
+          id: `tender-${tender.regNumber || Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          company: tender.customer,
+          industry: aiAnalysis.industry || "B2B Услуги и Производство",
+          service: aiAnalysis.service || "3D моушен-дизайн и анимация",
+          request_text: `${tender.title}. Официальный тендер (ЕИС Закупки). ${email ? 'Email: ' + email : ''}`,
+          budget: tender.price || "По согласованию",
+          source: `ЕИС Закупки (Гос/Комм тендер)`,
+          source_type: "tender",
+          url: tender.tenderUrl,
+          contact_name: "Отдел закупок / Тендерный комитет",
+          role: "ЛПР по закупке",
+          phone: phone || null,
+          telegram: null,
+          email: email || null,
+          suggested_solution: aiAnalysis.personalized_pitch || `Подготовка коммерческого предложения и презентационного портфолио по направлению «${aiAnalysis.service}» под ТЗ закупки.`,
+          score: phone ? 92 : 87,
+          verified_direct: true,
+          status: phone ? "new" : "contacts_unconfirmed",
+          created_at: new Date().toISOString()
+        };
+
+        const saved = await db.addLead(leadRecord);
+        if (saved) {
+          discovered.push(saved);
+          if (onProgress) onProgress(`📋 Зарегистрирован тендер: ${tender.customer.slice(0, 40)} (${tender.price})`);
+        }
+      } catch (e) {}
+    }
   } catch (err) {
-    console.warn(`[Tender Scraper] Ошибка поиска по запросу "${searchQuery}":`, err.message);
-    return [];
+    console.warn('[AI Hunter] Ошибка ЕИС Закупки:', err.message);
   }
+  return discovered;
 }
 
 /**
- * Получение подробной информации по закупке (контакты ЛПР, телефон, почта)
- */
-async function fetchTenderDetails(tenderUrl) {
-  try {
-    if (!tenderUrl || !tenderUrl.includes('zakupki.gov.ru')) return null;
-    const res = await axios.get(tenderUrl, {
-      httpsAgent: agent,
-      headers: HEADERS,
-      timeout: 8000
-    });
-    const $ = cheerio.load(res.data);
-    const bodyText = $('body').text().replace(/\s+/g, ' ');
-    
-    // Поиск телефонов
-    const phones = extractPhones(bodyText);
-    const phone = phones.length > 0 ? phones[0] : null;
-
-    // Поиск email
-    const emailMatch = bodyText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const email = emailMatch ? emailMatch[0] : null;
-
-    return {
-      phone,
-      email,
-      fullText: bodyText.slice(0, 3000)
-    };
-  } catch (err) {
-    return null;
-  }
-}
-
-/**
- * Чтение свежих публикаций Habr (Hub Design) через RSS
- */
-async function fetchHabrDesignPosts(limit = 4) {
-  try {
-    const res = await axios.get('https://habr.com/ru/rss/hubs/design/all/', {
-      headers: HEADERS,
-      timeout: 8000
-    });
-    const $ = cheerio.load(res.data, { xmlMode: true });
-    const posts = [];
-
-    $('item').each((i, el) => {
-      if (i >= limit) return;
-      const title = $(el).find('title').text().trim();
-      const link = $(el).find('link').text().trim();
-      const desc = $(el).find('description').text().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-
-      // Фильтруем статьи о 3D, моушне, видео и CGI
-      if (/3D|видео|анимац|график|CGI|моушн|дизайн|нейросет|визуализац/i.test(title + ' ' + desc)) {
-        posts.push({
-          title,
-          link,
-          description: desc.slice(0, 500),
-          source_type: 'habr_design'
-        });
-      }
-    });
-
-    return posts;
-  } catch (e) {
-    return [];
-  }
-}
-
-/**
- * Основной автономный ИИ-поиск коммерческих тендеров и заявок
+ * Главная точка входа: Автономный ИИ-поиск прямых заказчиков с полным доступом в интернет
  */
 export async function runAutonomousAiLeadHunt(onProgress = null) {
-  const foundLeads = [];
+  const allLeads = [];
   const log = (msg) => {
     console.log(`[AI Lead Hunter] ${msg}`);
     if (onProgress) onProgress(msg);
   };
 
-  log('Запуск ИИ-сканера открытых тендеров и коммерческих заказов...');
+  log('🚀 Запуск автономного ИИ-агента поиска прямых B2B-заказчиков в открытом интернете...');
 
-  // 1. Сбор целевых тендеров из ЕИС Закупки (44-ФЗ / 223-ФЗ)
-  const query = TENDER_QUERIES[Math.floor(Math.random() * TENDER_QUERIES.length)];
-  log(`Поиск тендеров в ЕИС по направлению: "${query}"...`);
-  
-  const tenders = await scrapeTenders(query, 6);
-  log(`Найдено ${tenders.length} свежих тендеров. Начинаем ИИ-анализ и квалификацию...`);
+  // 1. Свежие IT и технологические стартапы (ProductRadar)
+  const startups = await huntProductRadarStartups(log, 5);
+  allLeads.push(...startups);
 
-  for (const tender of tenders) {
-    try {
-      log(`Анализ закупки: ${tender.customer.slice(0, 45)}...`);
-      
-      const details = await fetchTenderDetails(tender.url);
-      const textToAnalyze = `${tender.title}. Заказчик: ${tender.customer}. Бюджет: ${tender.price}. ${details ? details.fullText : ''}`;
+  // 2. Компании с инвестициями и раундами (RB.ru)
+  const ventures = await huntVentureDeals(log, 3);
+  allLeads.push(...ventures);
 
-      // Семантическая оценка через ИИ (Gemini / DeepSeek)
-      const aiEvaluation = await analyzeLeadWithAi(textToAnalyze, tender.url);
+  // 3. Открытые коммерческие тендеры
+  const tenders = await huntTenders(log, 3);
+  allLeads.push(...tenders);
 
-      let phone = details?.phone || aiEvaluation.phone;
-      if (!phone && tender.customer) {
-        phone = await lookupCompanyPhone(tender.customer);
-      }
-
-      // Приводим категорию к услугам студии
-      let service = "3D моушен-дизайн и анимация";
-      if (/съемк|видеосъемк|фильм|ролик/i.test(tender.title)) {
-        service = "Видеоролики и графика";
-      } else if (/3D|визуализац|CGI/i.test(tender.title)) {
-        service = "3D моушен-дизайн и анимация";
-      }
-
-      const leadRecord = {
-        id: `tender-${tender.regNumber || Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        company: tender.customer,
-        industry: aiEvaluation.industry || "B2B Услуги и Производство",
-        service: aiEvaluation.service || service,
-        request_text: `${tender.title}. Официальный тендер (ЕИС Закупки). ${details?.email ? 'Email: ' + details.email : ''}`,
-        budget: tender.price || "По согласованию",
-        source: `ЕИС Закупки (Гос/Комм тендер)`,
-        source_type: "tender",
-        url: tender.url,
-        contact_name: "Отдел закупок / Тендерный комитет",
-        role: "ЛПР по закупке",
-        phone: phone || null,
-        suggested_solution: aiEvaluation.personalized_pitch || `Подготовка коммерческого предложения и презентационного портфолио по направлению «${service}» под ТЗ закупки.`,
-        score: phone ? 90 : 85,
-        verified_direct: true,
-        status: phone ? "new" : "contacts_unconfirmed",
-        created_at: new Date().toISOString()
-      };
-
-      const saved = await db.addLead(leadRecord);
-      if (saved) {
-        foundLeads.push(saved);
-        log(`🔥 В базу добавлен подтвержденный заказчик: ${tender.customer} (${tender.price})`);
-      }
-    } catch (err) {
-      console.warn(`[AI Hunter] Ошибка обработки тендера:`, err.message);
-    }
-  }
-
-  // 2. Если найдено мало, подключаем Habr Design публикации студий и компаний
-  if (foundLeads.length < 2) {
-    log('Поиск целевых компаний через профильные кейсы Habr Design...');
-    const posts = await fetchHabrDesignPosts(3);
-    for (const post of posts) {
-      try {
-        const aiEvaluation = await analyzeLeadWithAi(`${post.title}. ${post.description}`, post.link);
-        if (aiEvaluation.is_real_client && aiEvaluation.company_name) {
-          const phone = await lookupCompanyPhone(aiEvaluation.company_name);
-          const saved = await db.addLead({
-            id: `habr-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            company: aiEvaluation.company_name,
-            industry: aiEvaluation.industry || "B2B Услуги",
-            service: aiEvaluation.service || "3D моушен-дизайн и анимация",
-            request_text: `${post.title}. ${post.description}`,
-            budget: "По согласованию",
-            source: "Habr Design",
-            source_type: "web",
-            url: post.link,
-            contact_name: "Отдел маркетинга / Бренд-директор",
-            role: "ЛПР проекта",
-            phone: phone || null,
-            suggested_solution: aiEvaluation.personalized_pitch || "Предложить аутсорс 3D графики и визуализаций для продуктового маркетинга.",
-            score: phone ? 85 : 75,
-            verified_direct: true,
-            status: phone ? "new" : "contacts_unconfirmed",
-            created_at: new Date().toISOString()
-          });
-          if (saved) foundLeads.push(saved);
-        }
-      } catch (e) {}
-    }
-  }
-
-  log(`ИИ-поиск завершен. Найдено и сохранено целевых заказчиков: ${foundLeads.length}`);
-  return foundLeads;
+  log(`✅ Автономный поиск завершен! Найдено и сохранено целевых заказчиков: ${allLeads.length}`);
+  return allLeads;
 }

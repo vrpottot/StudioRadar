@@ -66,21 +66,31 @@ export function extractWebsites(text) {
   if (!text) return [];
   const matches = text.match(/https?:\/\/[^\s<>"]+|www\.[^\s<>"]+/gi) || [];
   return matches
-    .filter(w => !w.includes('duckduckgo') && !w.includes('google'))
+    .filter(w => !w.includes('duckduckgo') && !w.includes('google') && !w.includes('yandex'))
     .map(w => w.startsWith('http') ? w : `https://${w}`);
 }
 
 /**
- * Глубокое сканирование сайта компании на телефоны
+ * Глубокое сканирование сайта компании на все контакты: телефон, email, Telegram
  */
-export async function extractPhoneFromWebsite(domain) {
-  if (!domain) return null;
-  const baseUrl = domain.startsWith('http') ? domain.replace(/\/$/, '') : `https://${domain.replace(/\/$/, '')}`;
+export async function extractContactsFromWebsite(domain) {
+  if (!domain) return { phone: null, email: null, telegram: null, text: '' };
+  
+  let baseUrl = domain.trim();
+  if (!baseUrl.startsWith('http')) {
+    baseUrl = `https://${baseUrl}`;
+  }
+  baseUrl = baseUrl.replace(/\/$/, '');
 
-  // Проверяем главную и типовые страницы контактов
   const pathsToCheck = ['', '/contacts', '/kontakty', '/about', '/o-kompanii'];
+  let foundPhone = null;
+  let foundEmail = null;
+  let foundTg = null;
+  let accumulatedText = '';
 
   for (const path of pathsToCheck) {
+    if (foundPhone && foundEmail && foundTg) break;
+
     try {
       const url = `${baseUrl}${path}`;
       const resp = await axios.get(url, {
@@ -90,84 +100,81 @@ export async function extractPhoneFromWebsite(domain) {
       });
 
       if (resp.status === 200 && typeof resp.data === 'string') {
+        const $ = cheerio.load(resp.data);
+        const pageText = $('body').text().replace(/\s+/g, ' ');
+        accumulatedText += ' ' + pageText.slice(0, 1500);
+
         // 1. Поиск в HTML разметке tel:
-        const telMatches = resp.data.match(/href=["']tel:([^"']+)["']/gi);
-        if (telMatches) {
-          for (const m of telMatches) {
-            const phone = extractPhoneFromText(m);
-            if (phone) return phone;
+        if (!foundPhone) {
+          const telMatches = resp.data.match(/href=["']tel:([^"']+)["']/gi);
+          if (telMatches) {
+            for (const m of telMatches) {
+              const p = extractPhoneFromText(m);
+              if (p) { foundPhone = p; break; }
+            }
           }
         }
 
-        // 2. Поиск в тексте
-        const phone = extractPhoneFromText(resp.data);
-        if (phone) return phone;
+        // 2. Поиск телефона в тексте
+        if (!foundPhone) {
+          foundPhone = extractPhoneFromText(pageText);
+        }
+
+        // 3. Поиск Telegram
+        if (!foundTg) {
+          $('a[href*="t.me"]').each((i, a) => {
+            const href = $(a).attr('href');
+            if (href && !href.includes('share') && !href.includes('productradar') && !foundTg) {
+              foundTg = href.split('?')[0];
+            }
+          });
+        }
+
+        // 4. Поиск Email
+        if (!foundEmail) {
+          const mailtoMatches = resp.data.match(/href=["']mailto:([^"']+)["']/i);
+          if (mailtoMatches && mailtoMatches[1]) {
+            const candidate = mailtoMatches[1].split('?')[0].trim();
+            if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(candidate)) {
+              foundEmail = candidate;
+            }
+          }
+          if (!foundEmail) {
+            const emailMatch = pageText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            if (emailMatch) {
+              foundEmail = emailMatch[0];
+            }
+          }
+        }
       }
     } catch (e) {
       // Игнорируем недоступные подстраницы
     }
   }
 
-  return null;
+  return {
+    phone: foundPhone,
+    email: foundEmail,
+    telegram: foundTg,
+    text: accumulatedText.slice(0, 3000)
+  };
 }
 
 /**
- * Поиск корпоративного сайта и телефона компании через поисковую выдачу DuckDuckGo
+ * Совместимость для extractPhoneFromWebsite
  */
-export async function lookupCompanyPhone(companyName) {
-  if (!companyName || companyName === 'Прямой бренд' || companyName.length < 3) return null;
+export async function extractPhoneFromWebsite(domain) {
+  const contacts = await extractContactsFromWebsite(domain);
+  return contacts.phone;
+}
 
-  try {
-    const cleanName = companyName.replace(/ООО|АО|ПАО|ЗАО|ТОО|ИП/gi, '').trim();
-    const query = `${cleanName} официальный сайт контакты телефон`;
-
-    const res = await axios.post(
-      'https://html.duckduckgo.com/html/',
-      `q=${encodeURIComponent(query)}&b=`,
-      {
-        headers: {
-          ...HEADERS,
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Referer': 'https://html.duckduckgo.com/'
-        },
-        timeout: 6000
-      }
-    );
-
-    const $ = cheerio.load(res.data);
-    const pageText = $('body').text();
-
-    // 1. Проверяем, есть ли телефон прямо в сниппетах поисковой выдачи
-    const phoneInSnippets = extractPhoneFromText(pageText);
-    if (phoneInSnippets) {
-      return phoneInSnippets;
-    }
-
-    // 2. Находим первую релевантную ссылку на сайт компании (не агрегаторы)
-    const links = [];
-    $('.result__url').each((i, el) => {
-      let rawHref = $(el).attr('href') || '';
-      const match = rawHref.match(/uddg=([^&]+)/);
-      if (match) rawHref = decodeURIComponent(match[1]);
-
-      if (rawHref.startsWith('http') && 
-          !rawHref.includes('superjob') && 
-          !rawHref.includes('spark-interfax') && 
-          !rawHref.includes('rusprofile') && 
-          !rawHref.includes('checko') && 
-          !rawHref.includes('sbis') && 
-          !rawHref.includes('vk.com')) {
-        links.push(rawHref);
-      }
-    });
-
-    if (links.length > 0) {
-      const sitePhone = await extractPhoneFromWebsite(links[0]);
-      if (sitePhone) return sitePhone;
-    }
-  } catch (e) {
-    // Игнорируем сетевые ошибки поиска
+/**
+ * Поиск корпоративного сайта и телефона компании
+ */
+export async function lookupCompanyPhone(companyName, domain = null) {
+  if (domain) {
+    const contacts = await extractContactsFromWebsite(domain);
+    if (contacts.phone) return contacts.phone;
   }
-
   return null;
 }

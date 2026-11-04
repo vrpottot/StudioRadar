@@ -7,7 +7,10 @@ import {
   AlertTriangle, 
   CheckCircle2,
   Trash2,
-  Plus
+  Plus,
+  Bot,
+  Globe,
+  Key
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, TARGET_SERVICES } from '../data/leadsData';
 
@@ -21,6 +24,11 @@ export default function SettingsView() {
   const [minScoreThreshold, setMinScoreThreshold] = useState(70);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Конфигурация ИИ
+  const [aiProvider, setAiProvider] = useState('autonomous');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [openrouterApiKey, setOpenrouterApiKey] = useState('');
 
   const [staffStopWords, setStaffStopWords] = useState([
     "в штат", "полная ставка", "junior", "стажер", "оклад", "курьер", "офис-менеджер"
@@ -47,6 +55,9 @@ export default function SettingsView() {
           if (data.staff_stop_words) setStaffStopWords(data.staff_stop_words);
           if (data.cheap_stop_words) setCheapStopWords(data.cheap_stop_words);
           if (data.education_stop_words) setEducationStopWords(data.education_stop_words);
+          if (data.ai_provider) setAiProvider(data.ai_provider);
+          if (data.gemini_api_key) setGeminiApiKey(data.gemini_api_key);
+          if (data.openrouter_api_key) setOpenrouterApiKey(data.openrouter_api_key);
         }
       } catch (e) {
         console.warn("Ошибка загрузки настроек:", e.message);
@@ -66,7 +77,10 @@ export default function SettingsView() {
         min_score_threshold: minScoreThreshold,
         staff_stop_words: staffStopWords,
         cheap_stop_words: cheapStopWords,
-        education_stop_words: educationStopWords
+        education_stop_words: educationStopWords,
+        ai_provider: aiProvider,
+        gemini_api_key: geminiApiKey,
+        openrouter_api_key: openrouterApiKey
       };
 
       await fetch(`${API_BASE}/api/settings`, {
@@ -105,6 +119,91 @@ export default function SettingsView() {
           {isSaved ? <CheckCircle2 size={16} /> : <Save size={16} />}
           <span>{isSaved ? 'Сохранено в БД!' : 'Сохранить настройки'}</span>
         </button>
+      </div>
+
+      {/* AI Engine & Web Access Settings */}
+      <div className="card" style={{ padding: '20px', border: '1px solid var(--color-accent-purple)', background: '#faf9ff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--color-accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <Bot size={20} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-text-black)' }}>
+              Режим работы ИИ и Автономного поиска в интернете
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-headline)' }}>
+              StudioRadar автономно ищет стартапы, тендеры и контакты ЛПР в открытом вебе
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-black)', marginBottom: '6px', display: 'block' }}>
+              Основной движок ИИ-анализа:
+            </label>
+            <select 
+              value={aiProvider} 
+              onChange={(e) => setAiProvider(e.target.value)}
+              className="input-control"
+              style={{ width: '100%', padding: '8px 12px', fontSize: '13px' }}
+            >
+              <option value="autonomous">Встроенный автономный агент StudioRadar (Бесплатно, 0 API-ключей, полный доступ в веб)</option>
+              <option value="gemini">Google Gemini 2.0 Flash (Бесплатный API ключ с Google Search Grounding)</option>
+              <option value="openrouter">OpenRouter API (DeepSeek / Claude 3.5 / GPT-4o)</option>
+            </select>
+          </div>
+
+          {aiProvider === 'gemini' && (
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-black)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Key size={13} />
+                <span>Google AI Studio API Key (начинается с AIzaSy...):</span>
+              </label>
+              <input 
+                type="password"
+                placeholder="AIzaSy..."
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                className="input-control"
+                style={{ width: '100%', padding: '8px 12px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}
+              />
+              <span style={{ fontSize: '11px', color: 'var(--color-text-headline)', marginTop: '4px', display: 'block' }}>
+                Ключ можно бесплатно получить на <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent-purple)', textDecoration: 'underline' }}>aistudio.google.com</a> (до 15 запросов в минуту бесплатно).
+              </span>
+            </div>
+          )}
+
+          {aiProvider === 'openrouter' && (
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-black)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Key size={13} />
+                <span>OpenRouter API Key (sk-or-...):</span>
+              </label>
+              <input 
+                type="password"
+                placeholder="sk-or-v1-..."
+                value={openrouterApiKey}
+                onChange={(e) => setOpenrouterApiKey(e.target.value)}
+                className="input-control"
+                style={{ width: '100%', padding: '8px 12px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}
+              />
+            </div>
+          )}
+
+          <div style={{ background: '#fff', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '12px', fontSize: '12px', color: 'var(--color-text-body)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: 'var(--color-text-black)', marginBottom: '4px' }}>
+              <Globe size={14} color="var(--color-accent-purple)" />
+              <span>Источники открытого интернета (работают без внешних API):</span>
+            </div>
+            <ul style={{ paddingLeft: '18px', margin: '4px 0 0 0', lineHeight: 1.6 }}>
+              <li><strong>ProductRadar.ru</strong> — свежие технологические стартапы и MVP в РФ/СНГ с официальными сайтами и контактами основателей.</li>
+              <li><strong>RB.ru (Rusbase)</strong> — компании с новыми раундами инвестиций и маркетинговыми бюджетами.</li>
+              <li><strong>ЕИС Закупки</strong> — прямые открытые тендеры на 3D графику, видеоролики, моушн и анимацию.</li>
+              <li><strong>Автономный веб-краулер</strong> — переход на сайт каждого заказчика, извлечение прямых телефонов, email и Telegram ЛПР.</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* Notifications & Digest Schedule */}

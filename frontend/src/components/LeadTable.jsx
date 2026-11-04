@@ -11,7 +11,8 @@ import {
   User,
   Sparkles,
   PhoneCall,
-  Download
+  Download,
+  Send
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, TARGET_SERVICES, LEAD_STATUSES, getLeadGrade, LEAD_GRADES } from '../data/leadsData';
 import { exportLeadsToCsv } from '../utils/exportCsv';
@@ -212,6 +213,19 @@ export default function LeadTable({
                           </a>
                         ) : (
                           <span style={{ fontSize: '11px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>Телефон в поиске</span>
+                        )}
+
+                        {lead.telegram && (
+                          <a 
+                            href={lead.telegram.startsWith('http') ? lead.telegram : `https://t.me/${lead.telegram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn"
+                            style={{ padding: '4px 7px', fontSize: '11px', borderRadius: '4px', background: '#229ED9', color: '#fff', border: 'none', display: 'flex', alignItems: 'center' }}
+                            title={`Открыть Telegram: ${lead.telegram}`}
+                          >
+                            <Send size={11} />
+                          </a>
                         )}
                       </div>
                     </td>

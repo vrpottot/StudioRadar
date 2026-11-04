@@ -131,7 +131,8 @@ const INITIAL_SETTINGS = {
   ],
   education_stop_words: [
     "обучение", "курсы", "наставничество", "вебинар", "марафон", "онлайн-школа"
-  ]
+  ],
+  ai_provider: "autonomous"
 };
 
 class Database {

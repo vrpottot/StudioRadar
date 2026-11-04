@@ -270,6 +270,13 @@ app.get('/api/settings', async (req, res) => {
 
 app.post('/api/settings', async (req, res) => {
   const updated = await db.updateSettings(req.body);
+  if (req.body.gemini_api_key !== undefined) {
+    process.env.GEMINI_API_KEY = req.body.gemini_api_key;
+    process.env.Google_api = req.body.gemini_api_key;
+  }
+  if (req.body.openrouter_api_key !== undefined) {
+    process.env.OPENROUTER_API_KEY = req.body.openrouter_api_key;
+  }
   res.json({ success: true, settings: updated });
 });
 
