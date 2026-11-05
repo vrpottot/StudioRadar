@@ -313,17 +313,132 @@ ${JSON.stringify(rawPages, null, 2)}
     });
 
     const gData = await gRes.json();
-    const textPart = gData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const textPart = gData.candidates?.[0]?.content?.parts
+      ?.filter(p => p.text)
+      ?.map(p => p.text)
+      ?.join('') || '';
     const cleaned = textPart.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
     const jsonMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.map(item => ({ ...item, lead_type: 'signal' }));
       }
     }
   } catch (err) {
     console.warn('[Tavily Live Search] Ошибка:', err.message);
+  }
+
+  return null;
+}
+
+/**
+  * Живой интернет-поиск ОТКРЫТЫХ КОММЕРЧЕСКИХ ЗАКАЗОВ, БРИФОВ И ТЕНДЕРОВ
+  * (Workspace.ru, B2B-Center, прямые запросы коммерческих предложений с кнопкой отклика)
+  */
+export async function searchOpenOrdersWithTavily(queryTopic = 'site:workspace.ru/tenders/ OR site:b2b-center.ru/market/ "видео" OR "3D" OR "анимация"') {
+  const tavilyKey = (process.env.TAVILY_API_KEY || '').trim();
+  const geminiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
+
+  if (!tavilyKey || !geminiKey) {
+    return null;
+  }
+
+  try {
+    const searchRes = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: tavilyKey,
+        query: queryTopic,
+        search_depth: 'advanced',
+        max_results: 5
+      })
+    });
+
+    const searchData = await searchRes.json();
+    const rawPages = (searchData.results || []).map(p => ({
+      title: p.title,
+      url: p.url,
+      snippet: (p.content || '').slice(0, 400)
+    }));
+
+    if (rawPages.length === 0) {
+      return null;
+    }
+
+    const prompt = `
+Ты — B2B Lead Intelligence аналитик StudioRadar (студия 3D графики, анимации и видеопродакшна).
+Перед тобой результаты живого интернет-поиска по РЕАЛЬНЫМ ОТКРЫТЫМ КОММЕРЧЕСКИМ ЗАКАЗАМ, БРИФАМ И ТЕНДЕРАМ:
+${JSON.stringify(rawPages, null, 2)}
+
+Твоя задача — извлечь 2-3 реальных открытых заказа/брифа, на которые студия может прямо сейчас откликнуться или подать КП:
+Для каждого заказа верни:
+- company: Название компании-заказчика (например, 'ООО Главстрой-СПБ', 'Заказчик на Workspace', бренд из заказа)
+- order_title: Название тендера / заказа
+- industry: Недвижимость и девелопмент | Продукты питания и напитки | Авто и мото индустрия | Банки и финансы | Бьюти | Электротехника | Рекламные агентства и продакшн
+- service: 3D моушен-дизайн и анимация | 2D моушен-дизайн и анимация | 3D Web-приложения и интерактив | CGI графика для рекламных кампаний брендов
+- request_text: Подробное техническое задание из карточки заказа (что конкретно требуется разработать)
+- budget: Бюджет из карточки заказа или 'По согласованию / тендер'
+- url: ТОЧНАЯ ССЫЛКА НА СТРАНИЦУ ЗАКАЗА / ТЕНДЕРА из поля url входных данных (где можно нажать 'Откликнуться' / подать заявку)
+- apply_url: ТОЧНАЯ ССЫЛКА НА СТРАНИЦУ ЗАКАЗА
+- source: 'Workspace.ru (Открытый тендер)' или 'B2B-Center (Коммерческий тендер)'
+- contact_name: 'Тендерный комитет / Заказчик'
+- role: 'Менеджер закупки / Руководитель проекта'
+- phone: '+7 (495) ...' (или корпоративный телефон)
+- email: 'tender@...' (или почта приема КП)
+- score: 96
+- lead_type: 'order'
+- suggested_solution: Структурированный отклик студии на этот бриф (портфолио, стек, оценка сроков и этапов)
+
+Верни СТРОГО JSON массив (без markdown):
+[
+  {
+    "company": "...",
+    "order_title": "...",
+    "industry": "...",
+    "service": "...",
+    "request_text": "...",
+    "budget": "...",
+    "url": "...",
+    "apply_url": "...",
+    "source": "...",
+    "contact_name": "...",
+    "role": "...",
+    "phone": "...",
+    "email": "...",
+    "score": 96,
+    "lead_type": "order",
+    "suggested_solution": "..."
+  }
+]
+`;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiKey}`;
+    const gRes = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+      })
+    });
+
+    const gData = await gRes.json();
+    const textPart = gData.candidates?.[0]?.content?.parts
+      ?.filter(p => p.text)
+      ?.map(p => p.text)
+      ?.join('') || '';
+    const cleaned = textPart.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const jsonMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(item => ({ ...item, lead_type: 'order' }));
+      }
+    }
+  } catch (err) {
+    console.warn('[Tavily Open Orders] Ошибка:', err.message);
   }
 
   return null;

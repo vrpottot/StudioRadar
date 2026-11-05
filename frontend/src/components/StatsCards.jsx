@@ -4,12 +4,14 @@ import {
   ShieldCheck, 
   Sparkles,
   DollarSign,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 
 export default function StatsCards({ leads }) {
   const totalLeads = leads.length;
   const withPhone = leads.filter(l => l.phone).length;
+  const ordersCount = leads.filter(l => l.leadType === 'order').length;
   const inProgress = leads.filter(l => l.status === 'in_progress' || l.status === 'called' || l.status === 'negotiation').length;
 
   return (
@@ -17,7 +19,7 @@ export default function StatsCards({ leads }) {
       {/* Total Leads Card */}
       <div className="card stat-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-headline)' }}>Входящие лиды (сегодня)</span>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-headline)' }}>Всего лидов и заказов</span>
           <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#e0e1f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={16} color="var(--color-accent-purple)" />
           </div>
@@ -26,7 +28,23 @@ export default function StatsCards({ leads }) {
           {totalLeads}
         </div>
         <div style={{ fontSize: '11px', color: 'var(--color-accent-purple)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontWeight: 600 }}>
-          <span>Норма 10–30 лидов/день</span>
+          <span>Ежедневное обновление</span>
+        </div>
+      </div>
+
+      {/* Active Orders with Direct Apply Link */}
+      <div className="card stat-card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-headline)' }}>Открытые брифы и тендеры</span>
+          <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={16} color="#059669" />
+          </div>
+        </div>
+        <div style={{ fontSize: '26px', fontWeight: 800, color: '#047857', marginTop: '8px', letterSpacing: '-0.03em' }}>
+          {ordersCount}
+        </div>
+        <div style={{ fontSize: '11px', color: '#059669', marginTop: '4px', fontWeight: 600 }}>
+          С возможностью отклика
         </div>
       </div>
 
@@ -43,22 +61,6 @@ export default function StatsCards({ leads }) {
         </div>
         <div style={{ fontSize: '11px', color: 'var(--color-text-headline)', marginTop: '4px' }}>
           Готовы к прямому созвону
-        </div>
-      </div>
-
-      {/* Verified Direct (No Brokers) */}
-      <div className="card stat-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-headline)' }}>Прямые клиенты (No Broker)</span>
-          <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'var(--color-surface-beige-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ShieldCheck size={16} color="var(--color-accent-purple)" />
-          </div>
-        </div>
-        <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-text-black)', marginTop: '8px', letterSpacing: '-0.03em' }}>
-          100%
-        </div>
-        <div style={{ fontSize: '11px', color: 'var(--color-accent-purple)', marginTop: '4px', fontWeight: 600 }}>
-          Конечные компании-заказчики
         </div>
       </div>
 

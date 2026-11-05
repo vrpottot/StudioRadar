@@ -28,6 +28,7 @@ export default function App() {
 
   // Фильтры лидов
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'in_progress' | 'closed'
+  const [leadTypeFilter, setLeadTypeFilter] = useState('all'); // 'all' | 'order' | 'signal'
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedIndustry, setSelectedIndustry] = useState('Все сферы');
   const [selectedService, setSelectedService] = useState('Все услуги');
@@ -73,6 +74,7 @@ export default function App() {
             email: item.email,
             source: item.source,
             sourceType: item.source_type,
+            leadType: item.lead_type || (item.id.startsWith('order-') || (item.source && (item.source.includes('Workspace') || item.source.includes('B2B-Center') || item.source.includes('Тендер') || item.source.includes('Бриф'))) ? 'order' : 'signal'),
             budget: item.budget,
             score: item.score,
             grade: getLeadGrade(item.score || 70),
@@ -82,6 +84,7 @@ export default function App() {
             status: item.status,
             notes: item.notes,
             url: item.url,
+            applyUrl: item.apply_url || item.url,
             title: item.title,
             date: item.created_at ? item.created_at.replace('T', ' ').slice(0, 16) : ""
           }));
@@ -315,11 +318,21 @@ export default function App() {
       return false;
     }
 
+    if (leadTypeFilter === 'order' && lead.leadType !== 'order') {
+      return false;
+    }
+
+    if (leadTypeFilter === 'signal' && lead.leadType === 'order') {
+      return false;
+    }
+
     return true;
   });
 
   const phoneLeadsCount = leads.filter(l => Boolean(l.phone)).length;
   const inProgressCount = leads.filter(l => ['in_progress', 'called', 'negotiation'].includes(l.status)).length;
+  const ordersCount = leads.filter(l => l.leadType === 'order').length;
+  const signalsCount = leads.filter(l => l.leadType !== 'order').length;
 
   return (
     <div className="app-container">
@@ -386,6 +399,10 @@ export default function App() {
                 setSelectedService={setSelectedService}
                 onlyWithPhone={onlyWithPhone}
                 setOnlyWithPhone={setOnlyWithPhone}
+                leadTypeFilter={leadTypeFilter}
+                setLeadTypeFilter={setLeadTypeFilter}
+                ordersCount={ordersCount}
+                signalsCount={signalsCount}
                 onStatusChange={handleStatusChange}
               />
             </>

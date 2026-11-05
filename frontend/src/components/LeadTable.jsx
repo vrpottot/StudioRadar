@@ -29,6 +29,10 @@ export default function LeadTable({
   setSelectedService,
   onlyWithPhone,
   setOnlyWithPhone,
+  leadTypeFilter = 'all',
+  setLeadTypeFilter,
+  ordersCount = 0,
+  signalsCount = 0,
   onStatusChange
 }) {
   const getIndustryBadgeColor = (ind) => {
@@ -51,6 +55,80 @@ export default function LeadTable({
 
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
+      {/* Category Tabs: Все / Открытые заказы / Сигналы компаний */}
+      <div style={{
+        padding: '12px 20px',
+        borderBottom: '1px solid var(--border-subtle)',
+        background: '#faf9f6',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '10px'
+      }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setLeadTypeFilter && setLeadTypeFilter('all')}
+            className="btn"
+            style={{
+              padding: '6px 14px',
+              fontSize: '13px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              background: leadTypeFilter === 'all' ? '#18181b' : '#ffffff',
+              color: leadTypeFilter === 'all' ? '#ffffff' : 'var(--color-text-body)',
+              border: `1px solid ${leadTypeFilter === 'all' ? '#18181b' : 'var(--border-subtle)'}`
+            }}
+          >
+            Все записи
+          </button>
+
+          <button
+            onClick={() => setLeadTypeFilter && setLeadTypeFilter('order')}
+            className="btn"
+            style={{
+              padding: '6px 14px',
+              fontSize: '13px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              background: leadTypeFilter === 'order' ? '#059669' : '#ffffff',
+              color: leadTypeFilter === 'order' ? '#ffffff' : '#047857',
+              border: `1px solid ${leadTypeFilter === 'order' ? '#059669' : '#a7f3d0'}`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>🔥 Открытые заказы / Брифы ({ordersCount})</span>
+          </button>
+
+          <button
+            onClick={() => setLeadTypeFilter && setLeadTypeFilter('signal')}
+            className="btn"
+            style={{
+              padding: '6px 14px',
+              fontSize: '13px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              background: leadTypeFilter === 'signal' ? 'var(--color-accent-purple)' : '#ffffff',
+              color: leadTypeFilter === 'signal' ? '#ffffff' : 'var(--color-accent-purple)',
+              border: `1px solid ${leadTypeFilter === 'signal' ? 'var(--color-accent-purple)' : '#d4c5f6'}`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>🎯 Сигналы брендов ({signalsCount})</span>
+          </button>
+        </div>
+
+        <div style={{ fontSize: '12px', color: 'var(--color-text-headline)', fontWeight: 500 }}>
+          {leadTypeFilter === 'order' 
+            ? '⚡ Прямые заказы и тендеры с площадок с возможностью откликнуться' 
+            : (leadTypeFilter === 'signal' ? '📢 Активности брендов для прямого выхода на ЛПР' : 'Комплексный B2B-радар заказов и спроса')}
+        </div>
+      </div>
+
       {/* Search, Filter & Export Bar (Раздел 9 и 13.7 ТЗ) */}
       <div style={{ 
         padding: '16px 20px', 
@@ -258,40 +336,84 @@ export default function LeadTable({
                       </div>
                     </td>
 
-                    {/* Source */}
-                    <td style={{ minWidth: '160px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ 
-                          fontSize: '11px', 
-                          fontFamily: 'var(--font-mono)',
-                          color: '#15803d', 
-                          fontWeight: 600,
-                          background: '#dcfce7',
-                          border: '1px solid #bbf7d0',
-                          padding: '2px 7px',
-                          borderRadius: '4px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          <Globe size={11} />
-                          {lead.source || 'Web-поиск (Прямой заказчик)'}
-                        </span>
-                        {lead.url && (
-                          <a 
-                            href={lead.url} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            onClick={(e) => e.stopPropagation()} 
-                            style={{ color: 'var(--color-text-headline)', display: 'inline-flex', alignItems: 'center' }}
-                            title="Открыть первоисточник заказа"
-                          >
-                            <ExternalLink size={12} />
-                          </a>
+                    {/* Source & Order Type */}
+                    <td style={{ minWidth: '180px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {lead.leadType === 'order' ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              fontWeight: 800,
+                              color: '#065f46', 
+                              background: '#ecfdf5',
+                              border: '1px solid #6ee7b7',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              🔥 Открытый заказ
+                            </span>
+                            {(lead.applyUrl || lead.url) && (
+                              <a 
+                                href={lead.applyUrl || lead.url} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                onClick={(e) => e.stopPropagation()} 
+                                style={{ 
+                                  color: '#059669', 
+                                  fontSize: '11px', 
+                                  fontWeight: 700, 
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '2px',
+                                  textDecoration: 'none'
+                                }}
+                                title="Перейти на площадку и откликнуться на заказ"
+                              >
+                                <span>Откликнуться</span>
+                                <ExternalLink size={11} />
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              fontFamily: 'var(--font-mono)',
+                              color: 'var(--color-accent-purple)', 
+                              fontWeight: 700,
+                              background: '#f3effb',
+                              border: '1px solid #d4c5f6',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              🎯 Сигнал спроса
+                            </span>
+                            {lead.url && (
+                              <a 
+                                href={lead.url} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                onClick={(e) => e.stopPropagation()} 
+                                style={{ color: 'var(--color-text-headline)', display: 'inline-flex', alignItems: 'center' }}
+                                title="Открыть сайт компании / публикацию"
+                              >
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
                         )}
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'var(--color-text-headline)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
-                        {lead.date}
+                        <div style={{ fontSize: '11px', color: 'var(--color-text-body)', fontWeight: 500 }}>
+                          {lead.source || 'Прямой заказчик'}
+                        </div>
+                        <div style={{ fontSize: '10px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>
+                          {lead.date}
+                        </div>
                       </div>
                     </td>
 

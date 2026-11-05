@@ -133,6 +133,63 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
         {/* Drawer Body */}
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
+          {/* Order Banner if it is an open order / tender */}
+          {lead.leadType === 'order' && (
+            <div style={{
+              background: '#ecfdf5',
+              border: '1px solid #6ee7b7',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ 
+                  background: '#10b981', 
+                  color: '#ffffff', 
+                  fontSize: '11px', 
+                  fontWeight: 800, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.05em',
+                  padding: '3px 8px',
+                  borderRadius: '4px'
+                }}>
+                  🔥 Открытый заказ / Бриф
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#047857' }}>
+                  {lead.source || 'Workspace.ru / B2B-Center'}
+                </span>
+              </div>
+              <div style={{ fontSize: '13px', color: '#064e3b', lineHeight: 1.4 }}>
+                Компания открыто опубликовала тендер/бриф и принимает коммерческие предложения и портфолио студий.
+              </div>
+              <a
+                href={lead.applyUrl || lead.url}
+                target="_blank"
+                rel="noreferrer"
+                className="btn"
+                style={{
+                  background: '#059669',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  padding: '10px 16px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
+                }}
+              >
+                <ExternalLink size={15} />
+                <span>Перейти к заказу и откликнуться</span>
+              </a>
+            </div>
+          )}
+
           {/* Quick Action Block (Раздел 8.3 ТЗ) */}
           <div style={{
             background: 'var(--color-surface-beige-2)',
@@ -141,9 +198,36 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
             padding: '16px'
           }}>
             <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-headline)', marginBottom: '10px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
-              Быстрая связь с ЛПР
+              {lead.leadType === 'order' ? 'Каналы связи и подачи КП' : 'Быстрая связь с ЛПР'}
             </div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {(lead.applyUrl || lead.url) && lead.leadType === 'order' && (
+                <a 
+                  href={lead.applyUrl || lead.url} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="btn" 
+                  style={{ 
+                    flex: 1, 
+                    minWidth: '180px', 
+                    padding: '9px 16px', 
+                    fontSize: '13px', 
+                    borderRadius: '6px', 
+                    background: '#059669', 
+                    color: '#ffffff', 
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <ExternalLink size={15} />
+                  <span>Откликнуться на площадке</span>
+                </a>
+              )}
+
               {lead.phone && (
                 <a 
                   href={`tel:${lead.phone}`} 
@@ -248,7 +332,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           <div style={{ background: 'var(--color-surface-white)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-headline)', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
-                Исходный запрос клиента
+                {lead.leadType === 'order' ? 'Техническое задание заказа и бриф' : 'Исходный запрос клиента'}
               </div>
               <span className="badge" style={{ background: '#e0e1f7', color: 'var(--color-accent-purple)', border: '1px solid var(--color-accent-lavender)' }}>
                 {lead.service}
@@ -258,7 +342,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               background: 'var(--color-surface-beige-1)', 
               padding: '12px', 
               borderRadius: '8px', 
-              borderLeft: '3px solid var(--color-accent-purple)',
+              borderLeft: `3px solid ${lead.leadType === 'order' ? '#059669' : 'var(--color-accent-purple)'}`,
               fontSize: '13px', 
               lineHeight: '1.6',
               color: 'var(--color-text-black)',
@@ -267,27 +351,27 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
               "{requestText}"
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', fontSize: '12px', color: 'var(--color-text-headline)', flexWrap: 'wrap', gap: '8px' }}>
-              <span>Ориентировочный бюджет: <strong style={{ color: 'var(--color-text-black)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>{lead.budget}</strong></span>
-              {lead.url && (
+              <span>Бюджет: <strong style={{ color: 'var(--color-text-black)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>{lead.budget}</strong></span>
+              {(lead.applyUrl || lead.url) && (
                 <a 
-                  href={lead.url} 
+                  href={lead.applyUrl || lead.url} 
                   target="_blank" 
                   rel="noreferrer" 
                   style={{ 
-                    color: 'var(--color-accent-purple)', 
-                    fontWeight: 600, 
+                    color: lead.leadType === 'order' ? '#059669' : 'var(--color-accent-purple)', 
+                    fontWeight: 700, 
                     display: 'inline-flex', 
                     alignItems: 'center', 
                     gap: '4px',
                     textDecoration: 'none'
                   }}
-                  title="Перейти на сайт / первоисточник компании"
+                  title={lead.leadType === 'order' ? 'Перейти на тендерную площадку и откликнуться' : 'Перейти на сайт компании / публикацию'}
                 >
                   <ExternalLink size={12} />
-                  <span>{lead.url.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                  <span>{lead.leadType === 'order' ? 'Открыть карточку тендера ↗' : (lead.url ? lead.url.replace(/^https?:\/\/(www\.)?/, '') : 'Первоисточник')}</span>
                 </a>
               )}
-              <span style={{ fontFamily: 'var(--font-mono)' }}>Сигнал: {date}</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>Дата: {date}</span>
             </div>
           </div>
 
@@ -295,7 +379,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           <div style={{ background: 'var(--color-surface-beige-1)', border: '1px solid var(--color-accent-lavender)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-accent-purple)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               <Sparkles size={14} />
-              <span>Рекомендуемое предложение студии</span>
+              <span>{lead.leadType === 'order' ? 'Рекомендуемое КП для отклика на тендер' : 'Рекомендуемое предложение студии'}</span>
             </div>
             <div style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--color-text-body)' }}>
               {suggestedSolution}
@@ -306,10 +390,14 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           <div style={{ background: 'var(--color-surface-beige-2)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-black)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               <MessageSquare size={14} />
-              <span>Готовый скрипт для созвона с ЛПР</span>
+              <span>{lead.leadType === 'order' ? 'Сопроводительное письмо для отклика' : 'Готовый скрипт для созвона с ЛПР'}</span>
             </div>
             <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--color-text-body)' }}>
-              «Добрый день, {contactName}! Меня зовут [Имя], студия графики. Увидели ваш запрос на {lead.service} для {lead.company}. Мы специализируемся именно на сфере «{lead.industry}» и недавно делали подобную визуализацию/3D-интерактив. Готовы показать релевантный кейс и подготовить смету за 24 часа. Удобно ли сейчас уделить 2 минуты?»
+              {lead.leadType === 'order' ? (
+                `«Здравствуйте! Студия StudioRadar готова выполнить задачу по направлению «${lead.service}» (${lead.company}). Имеем профильный опыт в сфере «${lead.industry}», собственную команду CG-супервайзеров и моушн-дизайнеров. Готовы предоставить смету с разбивкой по этапам и портфолио аналогичных проектов в течение рабочего дня. Контактный телефон: +7 (495) ...»`
+              ) : (
+                `«Добрый день, ${contactName}! Меня зовут [Имя], студия графики. Увидели ваш запрос на ${lead.service} для ${lead.company}. Мы специализируемся именно на сфере «${lead.industry}» и недавно делали подобную визуализацию/3D-интерактив. Готовы показать релевантный кейс и подготовить смету за 24 часа. Удобно ли сейчас уделить 2 минуты?»`
+              )}
             </div>
           </div>
 
