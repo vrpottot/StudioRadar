@@ -29,6 +29,9 @@ jobs:
           mkdir -p staging/backend staging/frontend
           cp -r backend/src staging/backend/
           cp backend/package.json backend/package-lock.json staging/backend/
+          cp backend/leads.json staging/backend/
+          cp backend/pipelines.json staging/backend/
+          cp backend/settings.json staging/backend/
           cp -r frontend/dist staging/frontend/
           tar -czf deploy.tar.gz -C staging backend frontend
 
@@ -54,6 +57,12 @@ jobs:
             tar -xzf /tmp/deploy.tar.gz -C /var/www/studioradar
             rm -f /tmp/deploy.tar.gz
             
+            # Ensure .env exists with required Google API key
+            touch /var/www/studioradar/backend/.env
+            grep -q "Google_api=" /var/www/studioradar/backend/.env || echo "Google_api=AQ.Ab8RN6IFIcUnLOJyumxwoY5lLqRncubGLeHH5KUjhdsl8kyBig" >> /var/www/studioradar/backend/.env
+            grep -q "GEMINI_API_KEY=" /var/www/studioradar/backend/.env || echo "GEMINI_API_KEY=AQ.Ab8RN6IFIcUnLOJyumxwoY5lLqRncubGLeHH5KUjhdsl8kyBig" >> /var/www/studioradar/backend/.env
+            grep -q "PORT=" /var/www/studioradar/backend/.env || echo "PORT=8001" >> /var/www/studioradar/backend/.env
+
             # Install production dependencies for backend
             cd /var/www/studioradar/backend
             npm install --omit=dev
