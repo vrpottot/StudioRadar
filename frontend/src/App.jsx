@@ -18,7 +18,7 @@ const API_BASE = (typeof window !== 'undefined' && (window.location.origin.inclu
   : "";
 
 export default function App() {
-  const [activeView, setActiveView] = useState('leads'); // 'overview' | 'pipelines' | 'leads' | 'signals' | 'sources' | 'settings'
+  const [activeView, setActiveView] = useState('overview'); // 'overview' | 'signals' | 'leads' | 'pipelines' | 'sources' | 'settings'
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -353,6 +353,8 @@ export default function App() {
       {/* Main Content Area */}
       <div className="main-content">
         <Header 
+          activeView={activeView}
+          setActiveView={setActiveView}
           onFullScan={handleFullScan}
           isScanningAll={isScanningAll}
           leadsCount={leads.length}

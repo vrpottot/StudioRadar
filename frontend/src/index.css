@@ -1,76 +1,78 @@
 :root {
-  /* Gradly Typography System */
-  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  /* Modern Minimalist Swiss / SaaS Typography System */
+  --font-heading: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Gradly Color Palette & Surfaces */
-  --color-surface-beige-1: #fcfbf8;
-  --color-surface-beige-2: #f8f7f4;
-  --color-surface-beige-3: #f3f1ec;
+  /* Clean Light Canvas & Minimalist Surfaces (Gradly Playbook Reference) */
+  --color-surface-bg: #f8f9fa;
   --color-surface-white: #ffffff;
+  --color-surface-subtle: #f1f3f5;
+  --color-surface-border: #eaecf0;
+  --color-surface-border-subtle: #f2f4f7;
 
-  --color-accent-purple: #3b2a60;
-  --color-accent-purple-hover: #2f214d;
-  --color-accent-lavender: #d4c5f6;
-  --color-accent-green: #dceda9;
-  --color-accent-green-text: #243c10;
+  /* Modern Electric Indigo & Royal Purple Accent Palette */
+  --color-accent-purple: #4f46e5;
+  --color-accent-purple-hover: #4338ca;
+  --color-accent-purple-dark: #3730a3;
+  --color-accent-lavender: #e0e7ff;
+  --color-accent-indigo-subtle: #eef2ff;
 
-  --color-text-black: #131313;
-  --color-text-headline: #727272;
-  --color-text-body: #4a4a4a;
+  --color-accent-green: #10b981;
+  --color-accent-green-subtle: #ecfdf5;
+  --color-accent-green-text: #065f46;
+  --color-accent-green-border: #a7f3d0;
+
+  --color-accent-amber: #f59e0b;
+  --color-accent-amber-subtle: #fffbeb;
+  --color-accent-amber-text: #92400e;
+
+  /* Typography Colors */
+  --color-text-black: #101828;
+  --color-text-body: #344054;
+  --color-text-headline: #667085;
+  --color-text-muted: #98a2b3;
 
   /* Semantic UI Tokens */
-  --bg-page: var(--color-surface-beige-2);
+  --bg-page: var(--color-surface-bg);
   --bg-sidebar: var(--color-surface-white);
   --bg-card: var(--color-surface-white);
-  --bg-card-subtle: var(--color-surface-beige-1);
+  --bg-card-subtle: var(--color-surface-subtle);
   --bg-input: var(--color-surface-white);
-  --bg-hover: var(--color-surface-beige-1);
+  --bg-hover: #f9fafb;
 
-  --border-subtle: var(--color-surface-beige-3);
-  --border-medium: #e8e5dc;
+  --border-subtle: #eaecf0;
+  --border-medium: #d0d5dd;
   --border-focus: var(--color-accent-purple);
 
   --text-main: var(--color-text-black);
   --text-secondary: var(--color-text-body);
   --text-muted: var(--color-text-headline);
-  --text-light: #9a9a9a;
+  --text-light: #98a2b3;
 
   --primary: var(--color-accent-purple);
   --primary-hover: var(--color-accent-purple-hover);
-  --primary-subtle: #f3effb;
+  --primary-subtle: var(--color-accent-indigo-subtle);
   --primary-border: var(--color-accent-lavender);
 
   --accent-emerald: var(--color-accent-green);
-  --accent-emerald-subtle: #f4fae5;
-  --accent-emerald-border: #dceda9;
+  --accent-emerald-subtle: var(--color-accent-green-subtle);
+  --accent-emerald-border: var(--color-accent-green-border);
   --accent-emerald-text: var(--color-accent-green-text);
 
-  --accent-cyan: #1e3a5f;
-  --accent-cyan-subtle: #e7eef6;
-  --accent-cyan-border: #cde0f1;
-  --accent-cyan-text: #1e3a5f;
+  /* Radius & Soft Depth */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
 
-  --accent-rose: #9f1239;
-  --accent-rose-subtle: #f6c9c0;
-  --accent-rose-border: #f1b3a7;
-  --accent-rose-text: #6b0c26;
-
-  --accent-amber: #92400e;
-  --accent-amber-subtle: #fdf0e6;
-  --accent-amber-border: #f4e6d7;
-  --accent-amber-text: #7b3306;
-
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-
-  --shadow-sm: 0 1px 2px rgba(19, 19, 19, 0.03);
-  --shadow-card: 0 1px 3px rgba(19, 19, 19, 0.03), 0 1px 2px rgba(19, 19, 19, 0.02);
-  --shadow-hover: 0 4px 14px rgba(59, 42, 96, 0.05), 0 1px 3px rgba(19, 19, 19, 0.03);
-  --shadow-drawer: -8px 0 32px rgba(59, 42, 96, 0.06);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.05), 0 1px 2px rgba(16, 24, 40, 0.03);
+  --shadow-hover: 0 4px 16px rgba(16, 24, 40, 0.08);
+  --shadow-pill: 0 2px 8px rgba(16, 24, 40, 0.06);
+  --shadow-drawer: -8px 0 32px rgba(16, 24, 40, 0.08);
 }
 
 * {
@@ -99,20 +101,20 @@ h1, h2, h3, h4, .brand-font {
   font-family: var(--font-mono);
 }
 
-/* Custom Scrollbar - Gradly subtle style */
+/* Subtle Modern Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-page);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dcd8cf;
+  background: #d0d5dd;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #bbb6aa;
+  background: #98a2b3;
 }
 
 /* Dashboard Layout */
@@ -122,9 +124,10 @@ h1, h2, h3, h4, .brand-font {
   background-color: var(--bg-page);
 }
 
+/* Slim Icon Rail Sidebar (64px) */
 .sidebar-wrapper {
   position: relative;
-  width: 68px;
+  width: 64px;
   flex-shrink: 0;
   z-index: 50;
 }
@@ -134,7 +137,7 @@ h1, h2, h3, h4, .brand-font {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 68px;
+  width: 64px;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -142,14 +145,14 @@ h1, h2, h3, h4, .brand-font {
   z-index: 50;
   overflow-x: hidden;
   overflow-y: auto;
-  transition: width 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s ease;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
   white-space: nowrap;
 }
 
 .sidebar:hover,
 .sidebar.is-hovered {
-  width: 260px;
-  box-shadow: 4px 0 28px rgba(19, 19, 19, 0.08);
+  width: 240px;
+  box-shadow: 4px 0 24px rgba(16, 24, 40, 0.06);
 }
 
 .main-content {
@@ -164,17 +167,19 @@ h1, h2, h3, h4, .brand-font {
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-card);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
+  flex-direction: column;
+  padding: 16px 28px;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
 }
 
 .content-body {
-  padding: 24px;
+  padding: 24px 28px;
   flex: 1;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* Card System */
@@ -187,46 +192,117 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .stat-card {
-  padding: 18px 20px;
+  padding: 20px 22px;
   border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
 }
 
 .stat-card:hover {
-  border-color: var(--border-medium);
+  border-color: #cbd5e1;
   box-shadow: var(--shadow-hover);
 }
 
-/* Badges - Monospace, crisp uppercase tags */
+/* Hero Metric Card (Gradly Playbook signature purple gradient) */
+.stat-card-hero {
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6366f1 100%);
+  color: #ffffff;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.25);
+}
+
+/* Clean Pill Navigation & Buttons */
+.pill-nav {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f3f5;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  gap: 2px;
+}
+
+.pill-nav-item {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.pill-nav-item:hover {
+  color: #101828;
+}
+
+.pill-nav-item.active {
+  background: #ffffff;
+  color: #101828;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.pill-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border-subtle);
+  background: #ffffff;
+  color: var(--color-text-body);
+  text-decoration: none;
+}
+
+.pill-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--color-text-black);
+}
+
+.pill-button-primary {
+  background: #4f46e5;
+  color: #ffffff;
+  border: 1px solid #4f46e5;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+}
+
+.pill-button-primary:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+  color: #ffffff;
+}
+
+/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
   line-height: 1.4;
 }
 
 .badge-verified {
-  background: var(--color-accent-green);
-  color: var(--color-accent-green-text);
-  border: 1px solid #c9dda0;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .badge-score {
-  background: #e0e1f7;
-  color: var(--color-accent-purple);
-  border: 1px solid var(--color-accent-lavender);
-}
-
-.badge-phone {
-  background: var(--color-surface-beige-3);
-  color: var(--color-text-black);
-  border: 1px solid var(--border-medium);
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
 }
 
 /* Buttons */
@@ -234,92 +310,75 @@ h1, h2, h3, h4, .brand-font {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
   padding: 8px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.16s ease;
   border: 1px solid transparent;
   font-family: inherit;
   text-decoration: none;
   line-height: 1.4;
 }
 
-/* Gradly Trademark Signature Button: Lavender background -> Celery green on hover */
 .btn-primary {
-  background: var(--color-accent-lavender);
-  color: var(--color-accent-purple);
-  border: 1px solid rgba(59, 42, 96, 0.1);
-  box-shadow: 0 1px 2px rgba(59, 42, 96, 0.05);
+  background: #4f46e5;
+  color: #ffffff;
+  border: 1px solid #4f46e5;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
 }
 
 .btn-primary:hover {
-  background: var(--color-accent-green);
-  color: var(--color-accent-purple);
-  transform: translateY(-1px);
+  background: #4338ca;
+  border-color: #4338ca;
 }
 
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Solid Dark Brand Button */
 .btn-dark {
-  background: var(--color-accent-purple);
+  background: #18181b;
   color: #ffffff;
-  border: 1px solid var(--color-accent-purple);
-  box-shadow: 0 1px 3px rgba(59, 42, 96, 0.15);
+  border: 1px solid #18181b;
 }
 
 .btn-dark:hover {
-  background: var(--color-accent-purple-hover);
-  color: #ffffff;
-  transform: translateY(-1px);
+  background: #27272a;
 }
 
 .btn-secondary, .btn-outline {
-  background: var(--color-surface-white);
+  background: #ffffff;
   color: var(--text-main);
   border: 1px solid var(--border-medium);
 }
 
 .btn-secondary:hover, .btn-outline:hover {
-  background: var(--color-surface-beige-1);
-  border-color: #d8d4c9;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .btn-call {
-  background: var(--color-accent-green);
-  color: var(--color-accent-green-text);
-  border: 1px solid #c9dda0;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .btn-call:hover {
-  background: #cfe293;
-}
-
-.btn-tg {
-  background: #e7eef6;
-  color: #1e3a5f;
-  border: 1px solid #cde0f1;
-}
-
-.btn-tg:hover {
-  background: #d8e6f3;
+  background: #d1fae5;
 }
 
 /* Inputs & Form Controls */
 .input-control {
-  background: var(--bg-input);
+  background: #ffffff;
   border: 1px solid var(--border-medium);
   color: var(--text-main);
   font-size: 13px;
   padding: 8px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   outline: none;
   font-family: inherit;
   transition: all 0.15s ease;
@@ -327,7 +386,7 @@ h1, h2, h3, h4, .brand-font {
 
 .input-control:focus {
   border-color: var(--color-accent-purple);
-  box-shadow: 0 0 0 2px rgba(212, 197, 246, 0.4);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
 }
 
 /* Table Style */
@@ -341,18 +400,18 @@ h1, h2, h3, h4, .brand-font {
 .leads-table th {
   padding: 12px 16px;
   text-align: left;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--color-surface-beige-2);
+  background: #fafbfc;
 }
 
 .leads-table td {
-  padding: 13px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
   color: var(--text-main);
@@ -364,7 +423,7 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .leads-table tbody tr:hover {
-  background-color: var(--color-surface-beige-1);
+  background-color: #f8fafc;
 }
 
 /* Animations */
@@ -399,7 +458,7 @@ h1, h2, h3, h4, .brand-font {
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(19, 19, 19, 0.3);
+  background: rgba(16, 24, 40, 0.35);
   backdrop-filter: blur(4px);
   z-index: 100;
 }
@@ -424,9 +483,8 @@ h1, h2, h3, h4, .brand-font {
   background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  box-shadow: 0 20px 40px rgba(59, 42, 96, 0.08);
+  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.1);
   max-width: 820px;
   width: 90vw;
   max-height: 85vh;
-  overflow-y: auto;
 }

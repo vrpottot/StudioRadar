@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   Check, 
@@ -243,7 +243,7 @@ export default function PipelineBuilderModal({ isOpen, onClose, onSavePipeline }
                           cursor: 'pointer'
                         }}
                       >
-                        {isSelected && '✓ '} {srv}
+                        {isSelected && <Check size={12} style={{ display: 'inline', marginRight: '4px' }} />} {srv}
                       </button>
                     );
                   })}

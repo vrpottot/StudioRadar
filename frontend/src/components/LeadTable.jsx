@@ -13,7 +13,10 @@ import {
   PhoneCall,
   Download,
   Send,
-  Globe
+  Globe,
+  Zap,
+  Target,
+  Radio
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, TARGET_SERVICES, LEAD_STATUSES, getLeadGrade, LEAD_GRADES } from '../data/leadsData';
 import { exportLeadsToCsv } from '../utils/exportCsv';
@@ -55,77 +58,61 @@ export default function LeadTable({
 
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
-      {/* Category Tabs: Все / Открытые заказы / Сигналы компаний */}
+      {/* Category Tabs: Все / Открытые заказы / Сигналы компаний (Minimalist Swiss / Gradly Playbook style) */}
       <div style={{
-        padding: '12px 20px',
+        padding: '14px 20px',
         borderBottom: '1px solid var(--border-subtle)',
-        background: '#faf9f6',
+        background: '#ffffff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '10px'
+        gap: '12px'
       }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="pill-nav">
           <button
             onClick={() => setLeadTypeFilter && setLeadTypeFilter('all')}
-            className="btn"
-            style={{
-              padding: '6px 14px',
-              fontSize: '13px',
-              fontWeight: 700,
-              borderRadius: '6px',
-              background: leadTypeFilter === 'all' ? '#18181b' : '#ffffff',
-              color: leadTypeFilter === 'all' ? '#ffffff' : 'var(--color-text-body)',
-              border: `1px solid ${leadTypeFilter === 'all' ? '#18181b' : 'var(--border-subtle)'}`
-            }}
+            className={`pill-nav-item ${leadTypeFilter === 'all' ? 'active' : ''}`}
+            type="button"
           >
             Все записи
           </button>
 
           <button
             onClick={() => setLeadTypeFilter && setLeadTypeFilter('order')}
-            className="btn"
+            className={`pill-nav-item ${leadTypeFilter === 'order' ? 'active' : ''}`}
             style={{
-              padding: '6px 14px',
-              fontSize: '13px',
-              fontWeight: 700,
-              borderRadius: '6px',
-              background: leadTypeFilter === 'order' ? '#059669' : '#ffffff',
-              color: leadTypeFilter === 'order' ? '#ffffff' : '#047857',
-              border: `1px solid ${leadTypeFilter === 'order' ? '#059669' : '#a7f3d0'}`,
+              color: leadTypeFilter === 'order' ? '#065f46' : undefined,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px'
             }}
+            type="button"
           >
-            <span>🔥 Открытые заказы / Брифы ({ordersCount})</span>
+            <Zap size={13} color={leadTypeFilter === 'order' ? '#059669' : '#64748b'} />
+            <span>Открытые заказы ({ordersCount})</span>
           </button>
 
           <button
             onClick={() => setLeadTypeFilter && setLeadTypeFilter('signal')}
-            className="btn"
+            className={`pill-nav-item ${leadTypeFilter === 'signal' ? 'active' : ''}`}
             style={{
-              padding: '6px 14px',
-              fontSize: '13px',
-              fontWeight: 700,
-              borderRadius: '6px',
-              background: leadTypeFilter === 'signal' ? 'var(--color-accent-purple)' : '#ffffff',
-              color: leadTypeFilter === 'signal' ? '#ffffff' : 'var(--color-accent-purple)',
-              border: `1px solid ${leadTypeFilter === 'signal' ? 'var(--color-accent-purple)' : '#d4c5f6'}`,
+              color: leadTypeFilter === 'signal' ? '#4f46e5' : undefined,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px'
             }}
+            type="button"
           >
-            <span>🎯 Сигналы брендов ({signalsCount})</span>
+            <Target size={13} color={leadTypeFilter === 'signal' ? '#4f46e5' : '#64748b'} />
+            <span>Сигналы брендов ({signalsCount})</span>
           </button>
         </div>
 
         <div style={{ fontSize: '12px', color: 'var(--color-text-headline)', fontWeight: 500 }}>
           {leadTypeFilter === 'order' 
-            ? '⚡ Прямые заказы и тендеры с площадок с возможностью откликнуться' 
-            : (leadTypeFilter === 'signal' ? '📢 Активности брендов для прямого выхода на ЛПР' : 'Комплексный B2B-радар заказов и спроса')}
+            ? 'Прямые заказы и тендеры с площадок с возможностью откликнуться' 
+            : (leadTypeFilter === 'signal' ? 'Активности брендов для прямого выхода на ЛПР' : 'Комплексный B2B-радар заказов и спроса')}
         </div>
       </div>
 
@@ -343,17 +330,18 @@ export default function LeadTable({
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <span style={{ 
                               fontSize: '11px', 
-                              fontWeight: 800,
+                              fontWeight: 700,
                               color: '#065f46', 
                               background: '#ecfdf5',
-                              border: '1px solid #6ee7b7',
-                              padding: '2px 7px',
-                              borderRadius: '4px',
+                              border: '1px solid #a7f3d0',
+                              padding: '2px 8px',
+                              borderRadius: 'var(--radius-full)',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px'
                             }}>
-                              🔥 Открытый заказ
+                              <Zap size={11} />
+                              <span>Открытый заказ</span>
                             </span>
                             {(lead.applyUrl || lead.url) && (
                               <a 
@@ -386,13 +374,14 @@ export default function LeadTable({
                               fontWeight: 700,
                               background: '#f3effb',
                               border: '1px solid #d4c5f6',
-                              padding: '2px 7px',
-                              borderRadius: '4px',
+                              padding: '2px 8px',
+                              borderRadius: 'var(--radius-full)',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px'
                             }}>
-                              🎯 Сигнал спроса
+                              <Radio size={11} />
+                              <span>Сигнал спроса</span>
                             </span>
                             {lead.url && (
                               <a 

@@ -1,114 +1,186 @@
 import React from 'react';
 import { 
+  HelpCircle, 
+  Sparkles, 
+  Calendar, 
+  Zap, 
   Loader2, 
-  ShieldCheck, 
-  PhoneCall, 
-  Search, 
-  Target
+  Search,
+  CheckCircle2,
+  SlidersHorizontal,
+  Compass,
+  Layers,
+  TrendingUp,
+  Radio,
+  Settings,
+  Flame,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export default function Header({ 
+  activeView,
+  setActiveView,
   onFullScan,
   isScanningAll,
   leadsCount,
   aiProgressMessage
 }) {
-  return (
-    <header className="top-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
-        {/* Left: Title & Status indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-black)', letterSpacing: '-0.02em' }}>
-              Поток B2B-заявок
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-text-headline)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-accent-purple)', fontWeight: 500 }}>
-                <ShieldCheck size={14} color="var(--color-accent-purple)" /> Прямые клиенты
-              </span>
-              <span>•</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-accent-purple)', fontWeight: 500 }}>
-                <PhoneCall size={14} color="var(--color-accent-purple)" /> С номерами телефонов
-              </span>
-            </div>
-          </div>
+  const currentDate = new Intl.DateTimeFormat('ru-RU', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long' 
+  }).format(new Date());
 
-          {/* Daily Goal Pill */}
-          <div style={{ 
-            background: 'var(--color-surface-beige-1)', 
-            border: '1px solid var(--border-medium)', 
-            padding: '5px 12px', 
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '7px'
-          }}>
-            <Target size={14} color="var(--color-accent-purple)" />
-            <div style={{ fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-text-headline)' }}>Дневной план: </span>
-              <strong style={{ color: 'var(--color-text-black)', fontFamily: 'var(--font-mono)' }}>{leadsCount}</strong>
-              <span style={{ color: 'var(--color-accent-purple)', fontWeight: 600 }}> / 20–30 лидов</span>
-            </div>
-          </div>
+  const navItems = [
+    { id: 'overview', label: 'Обзор' },
+    { id: 'signals', label: 'Сигналы' },
+    { id: 'leads', label: 'Поиск ЛПР' },
+    { id: 'pipelines', label: 'Мои компании' },
+    { id: 'sources', label: 'Автопилот' }
+  ];
+
+  return (
+    <header className="top-bar" style={{ background: '#ffffff', borderBottom: '1px solid var(--border-subtle)', padding: '16px 28px' }}>
+      {/* Top Row: Title, Floating Pill Navigation, Support & Profile */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '16px' }}>
+        
+        {/* Brand Title with subtle Help circle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-text-black)', letterSpacing: '-0.03em', fontFamily: 'var(--font-heading)' }}>
+            Playbook
+          </h1>
+          <button 
+            type="button"
+            title="Интеллектуальная система квалификации и поиска B2B-заказов StudioRadar"
+            style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
+          >
+            <HelpCircle size={16} />
+          </button>
         </div>
 
-        {/* Right: Unified Action Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Center: Floating Pill Navigation Bar (Exact reference aesthetic) */}
+        <nav className="pill-nav" aria-label="Разделы системы">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              className={`pill-nav-item ${activeView === item.id ? 'active' : ''}`}
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Right: Support & Business Profile Pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
-            onClick={onFullScan} 
-            disabled={isScanningAll}
-            className="btn btn-dark"
+            type="button"
+            className="pill-button"
+            title="Служба поддержки и документация"
+            onClick={() => setActiveView('settings')}
+          >
+            <HelpCircle size={14} color="var(--color-text-headline)" />
+            <span>Поддержка</span>
+          </button>
+
+          <button 
+            type="button"
+            className="pill-button"
+            style={{ color: 'var(--color-accent-purple)', borderColor: 'var(--color-accent-lavender)', background: '#faf5ff' }}
+            title="Настройки профиля бизнеса студии"
+            onClick={() => setActiveView('settings')}
+          >
+            <Sparkles size={14} color="var(--color-accent-purple)" />
+            <span>Профиль бизнеса</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Second Row: Subheader with Schedule Status & Main Action Button */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        marginTop: '14px', 
+        paddingTop: '12px', 
+        borderTop: '1px solid #f2f4f7',
+        flexWrap: 'wrap', 
+        gap: '12px' 
+      }}>
+        {/* Date, Refresh Notice & Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="pill-button"
+            onClick={() => setActiveView('overview')}
+            style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 600 }}
+          >
+            <Calendar size={13} color="var(--color-text-headline)" />
+            <span>Записаться на демо</span>
+          </button>
+
+          <span style={{ fontSize: '12px', color: 'var(--color-text-headline)' }}>
+            {currentDate} — оценки пересчитаны сегодня в {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} — проверено {leadsCount} компаний
+          </span>
+        </div>
+
+        {/* Action Buttons: "Открыть список" (exact match to Gradly Playbook) and "Сканировать рынок" */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={() => setActiveView('leads')}
+            className={`pill-button ${activeView === 'leads' ? 'pill-button-primary' : ''}`}
             style={{ 
-              padding: '8px 16px',
+              padding: '7px 16px', 
               fontSize: '13px',
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              background: 'var(--color-accent-purple)',
-              color: '#ffffff',
-              border: '1px solid var(--color-accent-purple)',
-              boxShadow: '0 2px 6px rgba(59, 42, 96, 0.25)',
-              cursor: isScanningAll ? 'not-allowed' : 'pointer'
+              background: activeView === 'leads' ? '#4f46e5' : '#ffffff',
+              color: activeView === 'leads' ? '#ffffff' : '#4f46e5',
+              borderColor: '#c7d2fe'
             }}
-            title="Запустить сквозной поиск по всем источникам (Web Hunter)"
+            type="button"
+          >
+            <Zap size={14} color={activeView === 'leads' ? '#ffffff' : '#4f46e5'} />
+            <span>Открыть список</span>
+          </button>
+
+          <button
+            onClick={onFullScan}
+            disabled={isScanningAll}
+            className="pill-button pill-button-primary"
+            style={{ padding: '7px 16px', fontSize: '13px' }}
+            type="button"
           >
             {isScanningAll ? (
               <>
-                <Loader2 size={14} className="spin" color="#ffffff" />
-                <span style={{ color: '#ffffff', fontWeight: 600 }}>Поиск...</span>
+                <Loader2 size={14} className="spin" />
+                <span>Поиск в сети...</span>
               </>
             ) : (
               <>
-                <Search size={14} color="#ffffff" />
-                <span style={{ color: '#ffffff', fontWeight: 600 }}>Поиск</span>
+                <Sparkles size={14} />
+                <span>Сканировать рынок</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Live AI Progress Ticker Bar */}
+      {/* Live Progress Ticker (Clean minimal banner) */}
       {aiProgressMessage && (
         <div style={{
-          width: '100%',
-          background: 'var(--color-surface-beige-1)',
-          border: '1px solid var(--color-accent-lavender)',
-          borderRadius: '6px',
+          marginTop: '10px',
+          background: '#f8fafc',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
           padding: '8px 14px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           fontSize: '12px',
-          color: 'var(--color-accent-purple)',
-          animation: 'fadeIn 0.2s ease'
+          color: 'var(--color-text-body)'
         }}>
-          <Search size={14} color="var(--color-accent-purple)" className={isScanningAll ? "spin" : ""} />
-          <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>Мониторинг:</span>
-          <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {aiProgressMessage}
-          </span>
+          <Loader2 size={13} className="spin" color="var(--color-accent-purple)" />
+          <span>{aiProgressMessage}</span>
         </div>
       )}
     </header>

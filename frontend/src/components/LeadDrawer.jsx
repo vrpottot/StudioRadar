@@ -17,7 +17,8 @@ import {
   PhoneCall,
   ExternalLink,
   Send,
-  Mail
+  Mail,
+  Zap
 } from 'lucide-react';
 import { LEAD_STATUSES, getLeadGrade } from '../data/leadsData';
 
@@ -153,9 +154,13 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                   textTransform: 'uppercase', 
                   letterSpacing: '0.05em',
                   padding: '3px 8px',
-                  borderRadius: '4px'
+                  borderRadius: '4px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}>
-                  🔥 Открытый заказ / Бриф
+                  <Zap size={12} />
+                  <span>Открытый заказ / Бриф</span>
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: '#047857' }}>
                   {lead.source || 'Workspace.ru / B2B-Center'}
