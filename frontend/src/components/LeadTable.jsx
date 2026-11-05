@@ -91,7 +91,7 @@ export default function LeadTable({
             type="button"
           >
             <Zap size={13} color={leadTypeFilter === 'order' ? '#059669' : '#64748b'} />
-            <span>Открытые заказы и тендеры</span>
+            <span>Прямые заказы и брифы</span>
             <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
               ({ordersCount})
             </span>
@@ -115,7 +115,7 @@ export default function LeadTable({
 
         <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
           {leadTypeFilter === 'order' 
-            ? 'Коммерческие брифы с прямым откликом и подачей коммерческих предложений' 
+            ? 'Прямые брифы и заказы от коммерческих компаний и брендов' 
             : (leadTypeFilter === 'signal' ? 'Корпоративные триггеры спроса для прямого холодного выхода на ЛПР' : 'Единый поток целевых B2B-заказов и спроса')}
         </div>
       </div>

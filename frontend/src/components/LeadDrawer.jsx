@@ -163,11 +163,11 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                   <span>Открытый заказ / Бриф</span>
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: '#047857' }}>
-                  {lead.source || 'Workspace.ru / B2B-Center'}
+                  {lead.source || 'Прямой заказчик'}
                 </span>
               </div>
               <div style={{ fontSize: '13px', color: '#064e3b', lineHeight: 1.4 }}>
-                Компания открыто опубликовала тендер/бриф и принимает коммерческие предложения и портфолио студий.
+                Компания открыто опубликовала запрос на продакшн/графику и принимает коммерческие предложения.
               </div>
               <a
                 href={lead.applyUrl || lead.url}
@@ -370,10 +370,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                     gap: '4px',
                     textDecoration: 'none'
                   }}
-                  title={lead.leadType === 'order' ? 'Перейти на тендерную площадку и откликнуться' : 'Перейти на сайт компании / публикацию'}
+                  title={lead.leadType === 'order' ? 'Перейти к источнику заказа / публикации' : 'Перейти на сайт компании / публикацию'}
                 >
                   <ExternalLink size={12} />
-                  <span>{lead.leadType === 'order' ? 'Открыть карточку тендера ↗' : (lead.url ? lead.url.replace(/^https?:\/\/(www\.)?/, '') : 'Первоисточник')}</span>
+                  <span>{lead.leadType === 'order' ? 'Открыть источник заказа ↗' : (lead.url ? lead.url.replace(/^https?:\/\/(www\.)?/, '') : 'Первоисточник')}</span>
                 </a>
               )}
               <span style={{ fontFamily: 'var(--font-mono)' }}>Дата: {date}</span>
@@ -384,7 +384,7 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
           <div style={{ background: 'var(--color-surface-beige-1)', border: '1px solid var(--color-accent-lavender)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-accent-purple)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
               <Sparkles size={14} />
-              <span>{lead.leadType === 'order' ? 'Рекомендуемое КП для отклика на тендер' : 'Рекомендуемое предложение студии'}</span>
+              <span>{lead.leadType === 'order' ? 'Рекомендуемое КП для отклика' : 'Рекомендуемое предложение студии'}</span>
             </div>
             <div style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--color-text-body)' }}>
               {suggestedSolution}

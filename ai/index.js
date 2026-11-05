@@ -2,6 +2,7 @@
  * ai/index.js — Главная точка входа ИИ-модуля поиска и квалификации B2B-заказов
  * Экспортирует одну функцию: huntOrders(), которую вызывает backend.
  * Бэкенд ничего не знает про Exa, Tavily, Gemini или парсинг страниц.
+ * Фриланс-биржи, Telegram и тендеры полностью исключены.
  */
 import { searchWeb, searchWithGeminiGrounding } from './search.js';
 import { fetchPageContent } from './fetchPage.js';
@@ -15,7 +16,28 @@ import {
 import { ORDER_SEARCH_QUERIES } from './sources.js';
 
 /**
- * Автономный поиск и разбор коммерческих заказов для студии
+ * Определение читаемого названия прямого источника
+ * @param {string} url 
+ * @param {string} engineSource 
+ * @returns {string}
+ */
+function resolveSourceLabel(url, engineSource) {
+  if (!url) return engineSource || 'Прямой заказчик';
+  const u = url.toLowerCase();
+  if (u.includes('sostav.ru')) return 'Sostav.ru (Рекламная кампания)';
+  if (u.includes('adindex.ru')) return 'AdIndex.ru (Пресс-релиз бренда)';
+  if (u.includes('vc.ru')) return 'VC.ru (Бизнес-сигнал бренда)';
+  if (u.includes('new-retail.ru') || u.includes('retail.ru')) return 'Retail-медиа (Запуск продукта)';
+  if (u.includes('mts.ru') || u.includes('ozon.ru') || u.includes('x5.ru') || u.includes('samolet.ru') || u.includes('sber.ru')) {
+    return 'Корпоративный портал бренда';
+  }
+  if (engineSource === 'Exa Semantic Search') return 'Exa (Прямой заказчик)';
+  if (engineSource === 'Tavily Search') return 'Tavily (Прямой заказчик)';
+  return 'Корпоративный веб-сайт';
+}
+
+/**
+ * Автономный поиск и разбор прямых коммерческих заказов и брендовых кампаний
  * @param {object} options
  * @param {function} [options.onProgress] - Коллбек прогресса (message: string)
  * @param {string} [options.query] - Пользовательский поисковый запрос (опционально)
@@ -29,17 +51,17 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
     if (typeof onProgress === 'function') onProgress(msg);
   };
 
-  report('Запуск многоканального семантического поиска B2B-заказов...');
+  report('Запуск семантического радара прямых B2B-заказов (Exa & Tavily)...');
 
   // 1. Определение поискового запроса
   const searchQuery = query || ORDER_SEARCH_QUERIES[Math.floor(Math.random() * ORDER_SEARCH_QUERIES.length)];
-  report(`Поиск по открытым площадкам и тендерам: «${searchQuery}»...`);
+  report(`Поиск по прямым заказчикам и кампаниям брендов: «${searchQuery}»...`);
 
   // 2. Семантический веб-поиск через Exa (с fallback на Tavily)
   const searchResults = await searchWeb(
     searchQuery, 
     limit * 2,
-    'Goal for this search turn: find active commercial tenders, RFPs, client briefs, and brand marketing campaigns for 3D motion design, CGI, 2D animation, and video production.'
+    'Goal for this search: Find direct commercial corporate clients, companies, and brands in Russia seeking professional production studios for 3D motion design, CGI, 2D animation, and product commercials. STRICTLY EXCLUDE freelance marketplaces (fl.ru, kwork), EXCLUDE telegram channels, and EXCLUDE public government or portal tenders.'
   );
 
   if (searchResults.length > 0) {
@@ -50,14 +72,14 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
 
       report(`Анализ источника: ${res.title.slice(0, 50)}...`);
 
-      // Загрузка полного содержимого страницы (если есть сниппет/highlights от Exa, используем их в первую очередь)
+      // Загрузка содержимого страницы (если есть сниппет/highlights от Exa, используем их)
       let textToAnalyze = res.snippet;
       if (!textToAnalyze || textToAnalyze.length < 200) {
         const pageData = await fetchPageContent(res.url);
         textToAnalyze = pageData?.text || res.snippet;
       }
 
-      // Нейросетевая квалификация: заказ или нет?
+      // Нейросетевая квалификация: прямой заказ / сигнал или нет?
       const evaluation = await classifyLeadWithLlm({
         title: res.title,
         description: res.snippet.slice(0, 300),
@@ -87,14 +109,8 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
           industry: lead.industry,
           service: lead.service,
           request_text: lead.request_text,
-          budget: lead.budget,
-          source: res.source === 'Exa Semantic Search'
-            ? 'Exa-поиск (Прямой заказчик)'
-            : (res.url.includes('workspace.ru') 
-              ? 'Workspace.ru (Открытый бриф)' 
-              : (res.url.includes('b2b-center') 
-                ? 'B2B-Center (Коммерческий тендер)' 
-                : 'Web-поиск (Прямой заказчик)')),
+          budget: lead.budget || 'от 1 500 000 ₽',
+          source: resolveSourceLabel(res.url, res.source),
           source_type: 'direct',
           lead_type: lead.lead_type || 'order',
           url: res.url,
@@ -112,7 +128,7 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
         };
 
         leads.push(normalizedLead);
-        report(`Подтвержден прямой заказ: «${lead.company}» — ${lead.service}`);
+        report(`Подтвержден прямой клиент: «${lead.company}» — ${lead.service}`);
       }
     }
   }
@@ -154,6 +170,6 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
     }
   }
 
-  report(`Поиск завершен. Найдено целевых B2B-заказов: ${leads.length}`);
+  report(`Поиск завершен. Найдено целевых прямых клиентов: ${leads.length}`);
   return leads;
 }

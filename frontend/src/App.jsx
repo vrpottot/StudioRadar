@@ -74,7 +74,7 @@ export default function App() {
             email: item.email,
             source: item.source,
             sourceType: item.source_type,
-            leadType: item.lead_type || (item.id.startsWith('order-') || (item.source && (item.source.includes('Workspace') || item.source.includes('B2B-Center') || item.source.includes('Тендер') || item.source.includes('Бриф'))) ? 'order' : 'signal'),
+            leadType: item.lead_type || (item.id.startsWith('order-') || (item.source && (item.source.includes('Заказ') || item.source.includes('Бриф') || item.source.includes('Exa'))) ? 'order' : 'signal'),
             budget: item.budget,
             score: item.score,
             grade: getLeadGrade(item.score || 70),
@@ -191,7 +191,7 @@ export default function App() {
   const handleFullScan = async () => {
     if (isScanningAll) return;
     setIsScanningAll(true);
-    setAiProgressMessage("ИИ запускает поиск коммерческих тендеров и прямых заявок в открытом вебе...");
+    setAiProgressMessage("ИИ запускает поиск прямых заказов и кампаний брендов (Exa & Tavily)...");
 
     try {
       const res = await fetch(`${API_BASE}/api/scan`, { method: "POST" });

@@ -283,7 +283,7 @@ export default function PipelineBuilderModal({ isOpen, onClose, onSavePipeline }
                     <Sparkles size={16} color="var(--color-accent-purple)" /> Способ А: Автопоиск
                   </div>
                   <p style={{ fontSize: '12px', color: 'var(--color-text-headline)', marginTop: '4px' }}>
-                    Поиск по 7 целевым отраслям в тендерах, медиа и интернете
+                    Семантический поиск прямых заказов и кампаний брендов (Exa & Tavily)
                   </p>
                 </div>
 

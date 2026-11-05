@@ -1,11 +1,14 @@
 /**
  * search.js — Модуль веб-поиска (Exa Semantic Search, Tavily API & Google Search Grounding)
  * Каноническая интеграция Exa Search в соответствии с навыком build-with-exa
+ * Настроен СТРОГО на поиск прямых заказов и коммерческих брендов.
+ * Фриланс-биржи, Telegram и тендеры исключены на уровне API.
  */
 import Exa from 'exa-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { EXCLUDE_DOMAINS } from './sources.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,17 +29,19 @@ function getGeminiKey() {
   return (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
 }
 
+const DEFAULT_EXA_OBJECTIVE = 'Goal for this search: Find direct commercial corporate clients, companies, and brands in Russia seeking professional production studios for 3D motion design, CGI, 2D animation, and product commercials. STRICTLY EXCLUDE freelance marketplaces (fl.ru, kwork), EXCLUDE telegram channels, and EXCLUDE public government or portal tenders.';
+
 /**
  * Семантический поиск через Exa Search API (Каноническая интеграция build-with-exa)
  * @param {string} query - Поисковый запрос
  * @param {number} maxResults - Количество результатов (по умолчанию 5)
  * @param {string} [objective] - Цель поискового шага для ранжирования и извлечения
- * @returns {Promise<Array<{title: string, url: string, snippet: string, highlights: string[], source: string}>>}
+ * @returns {Promise<Array<{title: string, url: string, snippet: string, highlights: string[], publishedDate?: string, source: string}>>}
  */
 export async function searchWithExa(
   query, 
   maxResults = 5, 
-  objective = 'Goal for this search turn; find active commercial tenders, RFPs, client briefs, and brand marketing campaigns for 3D motion design, CGI, 2D animation, and video production.'
+  objective = DEFAULT_EXA_OBJECTIVE
 ) {
   const apiKey = getExaKey();
   if (!apiKey) {
@@ -46,11 +51,12 @@ export async function searchWithExa(
   try {
     const exa = new Exa(apiKey);
     
-    // Рекомендованный Exa запрос: type: "auto", contents: { highlights: true }, objective
+    // Рекомендованный Exa запрос: type: "auto", contents: { highlights: true }, objective, excludeDomains
     const params = {
       type: "auto",
       contents: { highlights: true },
-      numResults: maxResults
+      numResults: maxResults,
+      excludeDomains: EXCLUDE_DOMAINS
     };
 
     if (objective) {
@@ -79,7 +85,7 @@ export async function searchWithExa(
 }
 
 /**
- * Живой поиск через Tavily Search API
+ * Живой поиск через Tavily Search API с жестким исключением фриланс-бирж, ТГ и тендеров
  * @param {string} query - Поисковый запрос
  * @param {number} maxResults - Количество результатов
  * @returns {Promise<Array<{title: string, url: string, snippet: string, source: string}>>}
@@ -99,7 +105,8 @@ export async function searchWithTavily(query, maxResults = 5) {
         query: query,
         search_depth: 'basic',
         include_answer: false,
-        max_results: maxResults
+        max_results: maxResults,
+        exclude_domains: EXCLUDE_DOMAINS
       })
     });
 
@@ -120,17 +127,19 @@ export async function searchWithTavily(query, maxResults = 5) {
 }
 
 /**
- * Универсальный веб-поиск: использует Exa Semantic Search как основной движок,
- * при необходимости комбинируя или переключаясь на Tavily
+ * Универсальный веб-поиск: использует Exa Semantic Search как основной семантический движок,
+ * при необходимости переключаясь или дополняя результатами Tavily
  * @param {string} query - Поисковый запрос
  * @param {number} maxResults - Количество результатов
  * @param {string} [objective] - Целевой контекст для Exa
  * @returns {Promise<Array<{title: string, url: string, snippet: string, source: string}>>}
  */
 export async function searchWeb(query, maxResults = 5, objective = null) {
+  const targetObjective = objective || DEFAULT_EXA_OBJECTIVE;
+
   // 1. Приоритетный поиск через Exa
   if (getExaKey()) {
-    const exaResults = await searchWithExa(query, maxResults, objective);
+    const exaResults = await searchWithExa(query, maxResults, targetObjective);
     if (exaResults.length > 0) {
       return exaResults;
     }
@@ -152,7 +161,7 @@ export async function searchWeb(query, maxResults = 5, objective = null) {
  * @param {string} queryTopic - Описание задачи
  * @returns {Promise<Array<object>>}
  */
-export async function searchWithGeminiGrounding(queryTopic = "3D моушен-дизайн, видеоролики и CGI графика") {
+export async function searchWithGeminiGrounding(queryTopic = "3D моушен-дизайн, презентационные видеоролики и CGI графика") {
   const apiKey = getGeminiKey();
   if (!apiKey || apiKey.length < 20) {
     return [];
@@ -160,13 +169,15 @@ export async function searchWithGeminiGrounding(queryTopic = "3D моушен-д
 
   const prompt = `
 Ты — автономный поисковый агент студии StudioRadar.
-Найди 3 РЕАЛЬНЫХ российских бренда / коммерческих компании, у которых есть потребность или открытый коммерческий запрос по направлению:
+Найди 3 РЕАЛЬНЫХ российских бренда / коммерческих компании (FMCG, ритейл, авто, банки, девелопмент, бьюти), у которых запущены новые продукты, ребрендинг или рекламные кампании по направлению:
 «${queryTopic}»
 
-ТРЕБОВАНИЯ:
-- Исключить государственные закупки по 44-ФЗ (только коммерческий частный бизнес)
-- Исключить резюме и соискателей
-- Привести реальный веб-сайт компании
+СТРОГИЕ ТРЕБОВАНИЯ:
+- ИСКЛЮЧИТЬ фриланс-биржи (fl.ru, kwork, freelancehunt и др.)
+- ИСКЛЮЧИТЬ Telegram-каналы и чаты
+- ИСКЛЮЧИТЬ государственные закупки и тендерные площадки (44-ФЗ, 223-ФЗ, zakupki.gov.ru, b2b-center)
+- Только реальный коммерческий бизнес и бренды
+- Привести реальный веб-сайт компании и контакты ЛПР (директор по маркетингу, бренд-директор)
 
 Верни ответ СТРОГО в формате JSON массива:
 [
@@ -174,10 +185,10 @@ export async function searchWithGeminiGrounding(queryTopic = "3D моушен-д
     "company": "Название компании или бренда",
     "industry": "Сфера (Продукты питания и напитки, Недвижимость, Банки, Электротехника и др.)",
     "service": "3D моушен-дизайн и анимация | CGI графика | 2D анимация",
-    "request_text": "Суть коммерческой задачи студии",
-    "budget": "Бюджет (например, 'от 1 500 000 ₽')",
-    "url": "Ссылка на сайт",
-    "contact_name": "ФИО или 'Отдел маркетинга / Бренд-директор'",
+    "request_text": "Суть коммерческой задачи / инфоповод бренда",
+    "budget": "Бюджет кампании (например, 'от 1 500 000 ₽')",
+    "url": "Ссылка на сайт компании или публикацию",
+    "contact_name": "ФИО или 'Директор по маркетингу / Бренд-директор'",
     "role": "Директор по маркетингу / Бренд-менеджер",
     "phone": "+7 (495) ...",
     "email": "marketing@...",

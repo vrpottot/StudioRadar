@@ -21,7 +21,7 @@ const INITIAL_PIPELINES = [
       "sig_direct_order",
       "sig_prof_subcontract"
     ],
-    sources: ["ЕИС Закупки", "Web Search"],
+    sources: ["Web Search", "Отраслевые медиа"],
     priorityMinScore: 75,
     minGrade: "A",
     trackedCompanies: 48,
@@ -32,7 +32,7 @@ const INITIAL_PIPELINES = [
   {
     id: "pipe_direct_brands_fmcg",
     name: "Прямые бренды: Продукты питания, Напитки и Бьюти",
-    description: "Ежедневный мониторинг производителей FMCG и косметики на запуск новых рекламных кампаний, редизайн упаковки и тендеры.",
+    description: "Ежедневный мониторинг производителей FMCG и косметики на запуск новых рекламных кампаний, редизайн упаковки и брифы.",
     status: "active",
     targetServices: [
       "3D моушен-дизайн и анимация",
