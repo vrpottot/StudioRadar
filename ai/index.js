@@ -1,9 +1,9 @@
 /**
  * ai/index.js — Главная точка входа ИИ-модуля поиска и квалификации B2B-заказов
  * Экспортирует одну функцию: huntOrders(), которую вызывает backend.
- * Бэкенд ничего не знает про Tavily, Gemini или парсинг страниц.
+ * Бэкенд ничего не знает про Exa, Tavily, Gemini или парсинг страниц.
  */
-import { searchWithTavily, searchWithGeminiGrounding } from './search.js';
+import { searchWeb, searchWithGeminiGrounding } from './search.js';
 import { fetchPageContent } from './fetchPage.js';
 import { classifyLeadWithLlm } from './classify.js';
 import { 
@@ -29,31 +29,38 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
     if (typeof onProgress === 'function') onProgress(msg);
   };
 
-  report('Запуск многоканального поиска прямых B2B-заказов в открытом вебе...');
+  report('Запуск многоканального семантического поиска B2B-заказов...');
 
   // 1. Определение поискового запроса
   const searchQuery = query || ORDER_SEARCH_QUERIES[Math.floor(Math.random() * ORDER_SEARCH_QUERIES.length)];
   report(`Поиск по открытым площадкам и тендерам: «${searchQuery}»...`);
 
-  // 2. Живой поиск через Tavily
-  const searchResults = await searchWithTavily(searchQuery, limit * 2);
+  // 2. Семантический веб-поиск через Exa (с fallback на Tavily)
+  const searchResults = await searchWeb(
+    searchQuery, 
+    limit * 2,
+    'Goal for this search turn: find active commercial tenders, RFPs, client briefs, and brand marketing campaigns for 3D motion design, CGI, 2D animation, and video production.'
+  );
 
   if (searchResults.length > 0) {
-    report(`Найдено ${searchResults.length} кандидатов. Загрузка страниц и анализ содержимого...`);
+    report(`Найдено ${searchResults.length} кандидатов (${searchResults[0]?.source || 'Web Search'}). Анализ содержимого...`);
 
     for (const res of searchResults) {
       if (leads.length >= limit) break;
 
       report(`Анализ источника: ${res.title.slice(0, 50)}...`);
 
-      // Загрузка полного содержимого страницы
-      const pageData = await fetchPageContent(res.url);
-      const textToAnalyze = pageData?.text || res.snippet;
+      // Загрузка полного содержимого страницы (если есть сниппет/highlights от Exa, используем их в первую очередь)
+      let textToAnalyze = res.snippet;
+      if (!textToAnalyze || textToAnalyze.length < 200) {
+        const pageData = await fetchPageContent(res.url);
+        textToAnalyze = pageData?.text || res.snippet;
+      }
 
       // Нейросетевая квалификация: заказ или нет?
       const evaluation = await classifyLeadWithLlm({
-        title: pageData?.title || res.title,
-        description: pageData?.description || '',
+        title: res.title,
+        description: res.snippet.slice(0, 300),
         text: textToAnalyze,
         url: res.url
       });
@@ -81,11 +88,13 @@ export async function huntOrders({ onProgress = null, query = null, limit = 5 } 
           service: lead.service,
           request_text: lead.request_text,
           budget: lead.budget,
-          source: res.url.includes('workspace.ru') 
-            ? 'Workspace.ru (Открытый бриф)' 
-            : (res.url.includes('b2b-center') 
-              ? 'B2B-Center (Коммерческий тендер)' 
-              : 'Web-поиск (Прямой заказчик)'),
+          source: res.source === 'Exa Semantic Search'
+            ? 'Exa-поиск (Прямой заказчик)'
+            : (res.url.includes('workspace.ru') 
+              ? 'Workspace.ru (Открытый бриф)' 
+              : (res.url.includes('b2b-center') 
+                ? 'B2B-Center (Коммерческий тендер)' 
+                : 'Web-поиск (Прямой заказчик)')),
           source_type: 'direct',
           lead_type: lead.lead_type || 'order',
           url: res.url,

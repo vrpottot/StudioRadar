@@ -65,6 +65,8 @@ jobs:
             grep -q "PORT=" /var/www/studioradar/backend/.env || echo "PORT=8001" >> /var/www/studioradar/backend/.env
             sed -i '/TAVILY_API_KEY=/d' /var/www/studioradar/backend/.env
             echo "TAVILY_API_KEY=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" >> /var/www/studioradar/backend/.env
+            sed -i '/EXA_API_KEY=/d' /var/www/studioradar/backend/.env
+            echo "EXA_API_KEY=e1e4efeb-b461-4c1f-ba30-76162da7be60" >> /var/www/studioradar/backend/.env
 
             # Install production dependencies for backend and ai
             cd /var/www/studioradar/backend

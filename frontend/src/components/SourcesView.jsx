@@ -25,6 +25,7 @@ export default function SourcesView({
   isScanningAll
 }) {
   const sourcesList = [
+    { name: "Exa AI Semantic Search (Семантический веб-радар)", focus: "Глубокий поиск актуальных RFPs, коммерческих брифов брендов и тендеров с автоматическим извлечением хайлайтов", status: "online" },
     { name: "Корпоративные порталы брендов (МТС, Ozon, VK, ПИК, Самолёт)", focus: "Прямые коммерческие закупки и открытые запросы предложений на 3D и видео", status: "online" },
     { name: "Telegram-каналы продюсеров и агентств (CG Freelance, Norm Rabota, Finder.vc)", focus: "Срочный агентский субподряд, проектные задачи на 3D/моушн с прямыми контактами", status: "online" },
     { name: "HeadHunter (hh.ru — проектные контракты)", focus: "Проектная работа и аутсорс компьютерной графики для студий и команд", status: "online" },

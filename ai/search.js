@@ -1,6 +1,8 @@
 /**
- * search.js — Модуль поиска по открытому интернету (Tavily Search API & Google Search Grounding)
+ * search.js — Модуль веб-поиска (Exa Semantic Search, Tavily API & Google Search Grounding)
+ * Каноническая интеграция Exa Search в соответствии с навыком build-with-exa
  */
+import Exa from 'exa-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,6 +14,10 @@ dotenv.config({ path: path.resolve(__dirname, '../backend/.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
+function getExaKey() {
+  return (process.env.EXA_API_KEY || '').trim();
+}
+
 function getTavilyKey() {
   return (process.env.TAVILY_API_KEY || '').trim();
 }
@@ -21,10 +27,62 @@ function getGeminiKey() {
 }
 
 /**
+ * Семантический поиск через Exa Search API (Каноническая интеграция build-with-exa)
+ * @param {string} query - Поисковый запрос
+ * @param {number} maxResults - Количество результатов (по умолчанию 5)
+ * @param {string} [objective] - Цель поискового шага для ранжирования и извлечения
+ * @returns {Promise<Array<{title: string, url: string, snippet: string, highlights: string[], source: string}>>}
+ */
+export async function searchWithExa(
+  query, 
+  maxResults = 5, 
+  objective = 'Goal for this search turn; find active commercial tenders, RFPs, client briefs, and brand marketing campaigns for 3D motion design, CGI, 2D animation, and video production.'
+) {
+  const apiKey = getExaKey();
+  if (!apiKey) {
+    return [];
+  }
+
+  try {
+    const exa = new Exa(apiKey);
+    
+    // Рекомендованный Exa запрос: type: "auto", contents: { highlights: true }, objective
+    const params = {
+      type: "auto",
+      contents: { highlights: true },
+      numResults: maxResults
+    };
+
+    if (objective) {
+      params.objective = objective;
+    }
+
+    const result = await exa.search(query, params);
+
+    if (result.results && Array.isArray(result.results)) {
+      return result.results.map(r => ({
+        title: r.title || '',
+        url: r.url || '',
+        snippet: Array.isArray(r.highlights) && r.highlights.length > 0 
+          ? r.highlights.join('\n\n') 
+          : (r.text || ''),
+        highlights: r.highlights || [],
+        publishedDate: r.publishedDate || null,
+        source: 'Exa Semantic Search'
+      }));
+    }
+  } catch (err) {
+    console.warn('[AI Search] Ошибка Exa Search:', err.message);
+  }
+
+  return [];
+}
+
+/**
  * Живой поиск через Tavily Search API
  * @param {string} query - Поисковый запрос
  * @param {number} maxResults - Количество результатов
- * @returns {Promise<Array<{title: string, url: string, snippet: string}>>}
+ * @returns {Promise<Array<{title: string, url: string, snippet: string, source: string}>>}
  */
 export async function searchWithTavily(query, maxResults = 5) {
   const apiKey = getTavilyKey();
@@ -50,11 +108,40 @@ export async function searchWithTavily(query, maxResults = 5) {
       return data.results.map(r => ({
         title: r.title || '',
         url: r.url || '',
-        snippet: r.content || ''
+        snippet: r.content || '',
+        source: 'Tavily Search'
       }));
     }
   } catch (err) {
     console.warn('[AI Search] Ошибка Tavily Search:', err.message);
+  }
+
+  return [];
+}
+
+/**
+ * Универсальный веб-поиск: использует Exa Semantic Search как основной движок,
+ * при необходимости комбинируя или переключаясь на Tavily
+ * @param {string} query - Поисковый запрос
+ * @param {number} maxResults - Количество результатов
+ * @param {string} [objective] - Целевой контекст для Exa
+ * @returns {Promise<Array<{title: string, url: string, snippet: string, source: string}>>}
+ */
+export async function searchWeb(query, maxResults = 5, objective = null) {
+  // 1. Приоритетный поиск через Exa
+  if (getExaKey()) {
+    const exaResults = await searchWithExa(query, maxResults, objective);
+    if (exaResults.length > 0) {
+      return exaResults;
+    }
+  }
+
+  // 2. Резервный поиск через Tavily
+  if (getTavilyKey()) {
+    const tavilyResults = await searchWithTavily(query, maxResults);
+    if (tavilyResults.length > 0) {
+      return tavilyResults;
+    }
   }
 
   return [];
