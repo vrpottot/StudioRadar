@@ -229,6 +229,107 @@ export async function searchLeadsWithGoogleGemini(queryTopic = "3D моушен-
 }
 
 /**
+ * Живой интернет-поиск через Tavily Search API + квалификация через Google Gemini
+ * Находит реальные опубликованные статьи, брифы и рекламные кампании с точными ссылками!
+ */
+export async function searchLiveWebWithTavily(queryTopic = "site:sostav.ru 'запустил' 'ролик' OR '3D'") {
+  const tavilyKey = (process.env.TAVILY_API_KEY || '').trim();
+  const geminiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
+
+  if (!tavilyKey || !geminiKey) {
+    return null;
+  }
+
+  try {
+    const searchRes = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: tavilyKey,
+        query: queryTopic,
+        search_depth: 'basic',
+        max_results: 4
+      })
+    });
+
+    const searchData = await searchRes.json();
+    const rawPages = (searchData.results || []).map(p => ({
+      title: p.title,
+      url: p.url,
+      snippet: (p.content || '').slice(0, 350)
+    }));
+
+    if (rawPages.length === 0) {
+      return null;
+    }
+
+    const prompt = `
+Ты — B2B Lead Intelligence аналитик StudioRadar (студия 3D графики, моушн-дизайна и видео).
+Перед тобой результаты живого интернет-поиска по реальным публикациям и кампаниям брендов:
+${JSON.stringify(rawPages, null, 2)}
+
+Твоя задача — извлечь 2-3 реальных коммерческих бренда/компании, которые сейчас ведут маркетинговые активности, запускают продукты, ролики или графику.
+Для каждого бренда верни:
+- company: Точное название бренда/компании
+- industry: Продукты питания и напитки | Авто и мото индустрия | Банки и финансы | Газ и нефть | Бьюти | Электротехника | Недвижимость и девелопмент | Рекламные агентства и продакшн
+- service: 3D моушен-дизайн и анимация | 2D моушен-дизайн и анимация | ИИ видеоролики и графика | 3D Web-приложения и интерактив
+- request_text: Описание инфоповода / задачи из найденной статьи
+- budget: Оценка бюджета (например, 'от 2 000 000 ₽')
+- url: ТОЧНАЯ РЕАЛЬНАЯ ССЫЛКА из поля url входных данных
+- contact_name: 'Департамент маркетинга и рекламы'
+- role: 'Директор по маркетинговым коммуникациям'
+- phone: '+7 (495) ...' (или официальный контакт)
+- email: 'pr@...'
+- score: 95
+- suggested_solution: Персонализированный питч нашей студии для развития этой кампании
+
+Верни СТРОГО JSON массив (без markdown):
+[
+  {
+    "company": "...",
+    "industry": "...",
+    "service": "...",
+    "request_text": "...",
+    "budget": "...",
+    "url": "...",
+    "contact_name": "...",
+    "role": "...",
+    "phone": "...",
+    "email": "...",
+    "score": 95,
+    "suggested_solution": "..."
+  }
+]
+`;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiKey}`;
+    const gRes = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+      })
+    });
+
+    const gData = await gRes.json();
+    const textPart = gData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const cleaned = textPart.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const jsonMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Tavily Live Search] Ошибка:', err.message);
+  }
+
+  return null;
+}
+
+/**
  * Встроенный автономный семантический ИИ-движок StudioRadar
  * Работает 100% без внешних платных API или ключей с мгновенной квалификацией и генерацией оффера
  */

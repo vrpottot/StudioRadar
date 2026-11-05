@@ -266,8 +266,27 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
             }}>
               "{requestText}"
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: 'var(--color-text-headline)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', fontSize: '12px', color: 'var(--color-text-headline)', flexWrap: 'wrap', gap: '8px' }}>
               <span>Ориентировочный бюджет: <strong style={{ color: 'var(--color-text-black)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>{lead.budget}</strong></span>
+              {lead.url && (
+                <a 
+                  href={lead.url} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ 
+                    color: 'var(--color-accent-purple)', 
+                    fontWeight: 600, 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '4px',
+                    textDecoration: 'none'
+                  }}
+                  title="Перейти на сайт / первоисточник компании"
+                >
+                  <ExternalLink size={12} />
+                  <span>{lead.url.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                </a>
+              )}
               <span style={{ fontFamily: 'var(--font-mono)' }}>Сигнал: {date}</span>
             </div>
           </div>

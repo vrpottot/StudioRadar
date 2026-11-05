@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { searchLeadsWithGoogleGemini } from './aiService.js';
+import { searchLeadsWithGoogleGemini, searchLiveWebWithTavily } from './aiService.js';
 import { db } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,7 +9,14 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
-// 7 Целевых коммерческих сфер студии (FMCG, Авто, Банки, Нефть/Газ, Бьюти, Электроника, Девелопмент, Агентства)
+// Целевые запросы в живой интернет через Tavily
+const LIVE_WEB_QUERIES = [
+  "site:sostav.ru 'запустил' 'ролик' OR '3D' OR 'CGI'",
+  "site:adindex.ru 'кампания' 'видеоролик' OR '3D'",
+  "site:vc.ru 'запустили' '3D ролик' OR 'CGI' OR 'анимация'"
+];
+
+// 7 Целевых коммерческих сфер студии для ИИ-разведки
 const COMMERCIAL_SEARCH_TOPICS = [
   "3D визуализация продуктов, упаковки и CGI промо-ролики для FMCG и ритейла",
   "3D архитектурная анимация, видеотуры и интерактив для девелоперов и застройщиков",
@@ -30,24 +37,65 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
     if (onProgress) onProgress(msg);
   };
 
-  log('🚀 Запуск чистого поиска прямых коммерческих B2B-заказчиков и брендов (без тендеров)...');
+  log('🚀 Запуск поиска прямых коммерческих B2B-заказчиков и брендов...');
 
-  const apiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey || apiKey.length < 20) {
-    log('⚠️ API-ключ Google Gemini не настроен или некорректен.');
-    return [];
+  // 1. Поиск по живому интернету через Tavily Search API (Sostav, AdIndex, VC с реальными ссылками)
+  const tavilyKey = (process.env.TAVILY_API_KEY || '').trim();
+  if (tavilyKey) {
+    log('🌐 Поиск свежих рекламных кампаний и запусков брендов через Tavily Search API...');
+    const shuffledQueries = [...LIVE_WEB_QUERIES].sort(() => 0.5 - Math.random());
+    const selectedQuery = shuffledQueries[0];
+
+    try {
+      log(`🔎 Живой поиск в сети: «${selectedQuery}»...`);
+      const liveLeads = await searchLiveWebWithTavily(selectedQuery);
+      if (liveLeads && liveLeads.length > 0) {
+        log(`✨ Tavily нашел ${liveLeads.length} актуальных рекламных кампаний с прямыми ссылками на публикации!`);
+        for (const ll of liveLeads) {
+          const leadRecord = {
+            id: `live-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            company: ll.company,
+            industry: ll.industry || "Рекламные агентства и продакшн",
+            service: ll.service || "3D моушен-дизайн и анимация",
+            request_text: ll.request_text,
+            budget: ll.budget || "от 2 000 000 ₽",
+            source: "Web-поиск (Прямой заказчик)",
+            source_type: "direct",
+            url: ll.url || "",
+            contact_name: ll.contact_name || "Департамент маркетинга и рекламы",
+            role: ll.role || "Директор по маркетинговым коммуникациям",
+            phone: ll.phone || null,
+            telegram: null,
+            email: ll.email || null,
+            suggested_solution: ll.suggested_solution || `Подготовка коммерческого предложения по направлению «${ll.service}».`,
+            score: ll.score || 95,
+            verified_direct: true,
+            status: ll.phone ? "new" : (ll.email ? "in_review" : "contacts_unconfirmed"),
+            created_at: new Date().toISOString()
+          };
+          const saved = await db.addLead(leadRecord);
+          if (saved) {
+            allLeads.push(saved);
+            log(`🔥 Добавлен подтвержденный заказчик из СМИ: ${ll.company} (${ll.url})`);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[AI Hunter] Ошибка живого поиска Tavily:', err.message);
+    }
   }
 
-  // Выбираем 2 случайных направления для глубокого сканирования
-  const shuffled = [...COMMERCIAL_SEARCH_TOPICS].sort(() => 0.5 - Math.random());
-  const selectedTopics = shuffled.slice(0, 2);
+  // 2. Дополнительная B2B-разведка по целевым сферам через Google Gemini
+  const apiKey = (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
+  if (apiKey && apiKey.length > 20) {
+    const shuffled = [...COMMERCIAL_SEARCH_TOPICS].sort(() => 0.5 - Math.random());
+    const selectedTopic = shuffled[0];
 
-  for (const topic of selectedTopics) {
-    log(`🔎 ИИ анализирует открытый веб по направлению: «${topic}»...`);
+    log(`🔎 ИИ анализирует открытые B2B запросы по направлению: «${selectedTopic}»...`);
     try {
-      const geminiLeads = await searchLeadsWithGoogleGemini(topic);
+      const geminiLeads = await searchLeadsWithGoogleGemini(selectedTopic);
       if (geminiLeads && geminiLeads.length > 0) {
-        log(`✨ Найдено ${geminiLeads.length} прямых коммерческих запросов по направлению «${topic}»!`);
+        log(`✨ Выделено ${geminiLeads.length} коммерческих запросов по направлению «${selectedTopic}»!`);
         for (const gl of geminiLeads) {
           const leadRecord = {
             id: `direct-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -78,7 +126,7 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
         }
       }
     } catch (e) {
-      console.warn('[AI Hunter] Ошибка поиска:', e.message);
+      console.warn('[AI Hunter] Ошибка поиска Gemini:', e.message);
     }
   }
 
