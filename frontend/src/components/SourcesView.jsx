@@ -9,8 +9,9 @@ import {
   Play, 
   RefreshCw, 
   ShieldCheck, 
-  FileText, 
-  Globe 
+  Globe,
+  Building2,
+  Tv
 } from 'lucide-react';
 
 export default function SourcesView({ 
@@ -19,12 +20,12 @@ export default function SourcesView({
   onFullScan,
   isScanningAll
 }) {
-  const tenderCategories = [
-    { name: "ЕИС Госзакупки (44-ФЗ)", focus: "Тендеры на видеопроизводство, презентационные ролики и анимацию", status: "online" },
-    { name: "ЕИС Закупки (223-ФЗ)", focus: "Коммерческие конкурсы госкорпораций на 3D графику и визуализацию", status: "online" },
-    { name: "Habr Design Hub", focus: "Кейсы студий, анонсы запусков брендов и редизайнов", status: "online" },
-    { name: "Открытый веб (Web Search)", focus: "Прямые запросы коммерческих КП и открытые конкурсы", status: "online" },
-    { name: "Отраслевые выставки (Expo)", focus: "Анонсы участников форумов ПМЭФ, ИННОПРОМ, Армия", status: "online" }
+  const sourcesList = [
+    { name: "Google Gemini Web Search", focus: "Прямой поиск открытых потребностей и ТЗ брендов в открытом вебе", status: "online" },
+    { name: "Корпоративные порталы брендов", focus: "Прямые запросы коммерческих предложений на 3D, CGI и видео", status: "online" },
+    { name: "Отраслевые медиа (Habr / VC / Sostav)", focus: "Кейсы студий, анонсы запусков брендов, ребрендинги и рекламные кампании", status: "online" },
+    { name: "Деловые форумы и выставки (Expo)", focus: "Участники ПМЭФ, ИННОПРОМ, ЦИПР с потребностью в видеостенах и 3D", status: "online" },
+    { name: "Партнерская B2B-сеть агентств", focus: "Запросы на субподряд по сложной 3D анимации и графике", status: "online" }
   ];
 
   return (
@@ -36,62 +37,13 @@ export default function SourcesView({
             Источники данных и мониторинг
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--color-text-headline)', marginTop: '2px' }}>
-            Управление подключаемыми модулями сбора информации по закупкам, тендерам и открытому вебу
+            Прямой поиск коммерческих B2B-заказчиков и брендов через открытый веб и отраслевые медиа
           </p>
         </div>
       </div>
 
-      {/* Main Sources Cards Grid (Раздел 5 ТЗ) */}
+      {/* Main Sources Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-        {/* Tender EIS Card */}
-        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0e1f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <FileText size={18} color="var(--color-accent-purple)" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>ЕИС Закупки (Тендеры)</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>44-ФЗ и 223-ФЗ конкурсы</div>
-                </div>
-              </div>
-
-              <span className="badge badge-verified">
-                <CheckCircle2 size={12} /> Активен
-              </span>
-            </div>
-
-            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Прямой мониторинг официальных закупок и запросов КП на видеопроизводство, 3D анимацию и презентационные фильмы.
-            </p>
-
-            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Проверка закупок по 7 ключевым поисковым матрицам</div>
-              <div>• Автоматическое извлечение прямых контактов ответственных ЛПР</div>
-            </div>
-          </div>
-
-          <button
-            onClick={onAiHunt}
-            disabled={isAiHunting}
-            className="btn btn-outline"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
-          >
-            {isAiHunting ? (
-              <>
-                <RefreshCw size={14} className="spin" />
-                <span>Идет поиск по тендерам...</span>
-              </>
-            ) : (
-              <>
-                <Play size={14} />
-                <span>Собрать тендеры ЕИС</span>
-              </>
-            )}
-          </button>
-        </div>
-
         {/* AI Autonomous Hunter Card */}
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
           <div>
@@ -101,23 +53,23 @@ export default function SourcesView({
                   <Sparkles size={18} color="var(--color-accent-green-text)" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>ИИ-Хантер (Web Search)</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>DuckDuckGo + DeepSeek / Gemini</div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>ИИ-Хантер (Google Gemini)</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Прямой Web-поиск B2B-клиентов</div>
                 </div>
               </div>
 
               <span className="badge badge-verified">
-                <CheckCircle2 size={12} /> Автономный
+                <CheckCircle2 size={12} /> Активен
               </span>
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Автономный поиск прямых коммерческих тендеров, конкурсов и запросов КП на создание 3D видео в российском сегменте интернета.
+              Автономный поиск прямых коммерческих брендов, девелоперов, финтеха и производителей с открытыми запросами на 3D, CGI и промо-ролики.
             </p>
 
             <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Поиск конкурсов на видеоролики и промо-графику</div>
-              <div>• Автоматическое определение прямых телефонов с сайтов компаний</div>
+              <div>• Поиск по 7 целевым коммерческим направлениям студии</div>
+              <div>• Автоматическое определение контактов ЛПР и персонализированный оффер</div>
             </div>
           </div>
 
@@ -130,28 +82,28 @@ export default function SourcesView({
             {isAiHunting ? (
               <>
                 <RefreshCw size={14} className="spin" />
-                <span>ИИ ищет тендеры в сети...</span>
+                <span>ИИ ищет прямых заказчиков...</span>
               </>
             ) : (
               <>
                 <Sparkles size={14} />
-                <span>Запустить ИИ-Поиск тендеров</span>
+                <span>Запустить поиск прямых клиентов</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Habr Design Card */}
+        {/* Brand Portals Card */}
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--color-surface-beige-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Globe size={18} color="var(--color-accent-purple)" />
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0e1f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Building2 size={18} color="var(--color-accent-purple)" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Habr Design & Медиа</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Кейсы и анонсы брендов</div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Порталы брендов & B2B</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Прямые коммерческие запросы</div>
                 </div>
               </div>
 
@@ -161,12 +113,61 @@ export default function SourcesView({
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Мониторинг отраслевых публикаций о запуске новых продуктов, ребрендингах и технологических инициативах.
+              Мониторинг сайтов крупных брендов и холдингов, запрашивающих коммерческие предложения на графику и видеопроизводство.
             </p>
 
             <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Отслеживание прямых потребностей в визуализациях</div>
-              <div>• Проверка соответствия 7 целевым отраслям студии</div>
+              <div>• Проверка коммерческих бюджетов от 1 000 000 ₽</div>
+              <div>• Прямой выход на бренд-директоров и отделы маркетинга</div>
+            </div>
+          </div>
+
+          <button
+            onClick={onAiHunt}
+            disabled={isAiHunting}
+            className="btn btn-outline"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
+          >
+            {isAiHunting ? (
+              <>
+                <RefreshCw size={14} className="spin" />
+                <span>Сканирование брендов...</span>
+              </>
+            ) : (
+              <>
+                <Play size={14} />
+                <span>Собрать прямые запросы</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Media & Design Hubs Card */}
+        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--color-surface-beige-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Globe size={18} color="var(--color-accent-purple)" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Отраслевые медиа & Кейсы</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>VC, Sostav, Habr Design</div>
+                </div>
+              </div>
+
+              <span className="badge badge-verified">
+                <CheckCircle2 size={12} /> Активен
+              </span>
+            </div>
+
+            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
+              Мониторинг отраслевых публикаций о запусках новых линеек продуктов, рекламных кампаний и ребрендингах.
+            </p>
+
+            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div>• Отслеживание реального спроса на 3D анимацию и видео</div>
+              <div>• Классификация по отраслям студии</div>
             </div>
           </div>
 
@@ -179,7 +180,7 @@ export default function SourcesView({
             {isScanningAll ? (
               <>
                 <RefreshCw size={14} className="spin" />
-                <span>Сканирование медиа...</span>
+                <span>Сквозной сбор...</span>
               </>
             ) : (
               <>
@@ -207,7 +208,7 @@ export default function SourcesView({
               </tr>
             </thead>
             <tbody>
-              {tenderCategories.map((ch, idx) => (
+              {sourcesList.map((ch, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--color-surface-beige-2)' }}>
                   <td style={{ padding: '10px', fontWeight: 600, color: 'var(--color-text-black)' }}>
                     {ch.name}

@@ -261,32 +261,22 @@ export default function LeadTable({
                     {/* Source */}
                     <td style={{ minWidth: '160px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {(() => {
-                          const isDirect = lead.sourceType === 'direct' || (lead.source && (lead.source.includes('Web-поиск') || lead.source.includes('Google') || lead.source.includes('Прямой')));
-                          const isCorp = lead.source && lead.source.includes('223-ФЗ');
-                          const bg = isDirect ? '#dcfce7' : (isCorp ? '#e0f2fe' : '#f1f5f9');
-                          const textCol = isDirect ? '#15803d' : (isCorp ? '#0369a1' : '#334155');
-                          const borderCol = isDirect ? '#bbf7d0' : (isCorp ? '#bae6fd' : '#e2e8f0');
-
-                          return (
-                            <span style={{ 
-                              fontSize: '11px', 
-                              fontFamily: 'var(--font-mono)',
-                              color: textCol, 
-                              fontWeight: 600,
-                              background: bg,
-                              border: `1px solid ${borderCol}`,
-                              padding: '2px 7px',
-                              borderRadius: '4px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}>
-                              {isDirect ? <Globe size={11} /> : (isCorp ? <Building2 size={11} /> : <Sparkles size={11} />)}
-                              {lead.source}
-                            </span>
-                          );
-                        })()}
+                        <span style={{ 
+                          fontSize: '11px', 
+                          fontFamily: 'var(--font-mono)',
+                          color: '#15803d', 
+                          fontWeight: 600,
+                          background: '#dcfce7',
+                          border: '1px solid #bbf7d0',
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          <Globe size={11} />
+                          {lead.source || 'Web-поиск (Прямой заказчик)'}
+                        </span>
                         {lead.url && (
                           <a 
                             href={lead.url} 
