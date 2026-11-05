@@ -1,20 +1,20 @@
 import React from 'react';
 import { 
-  HelpCircle, 
+  Radar, 
   Sparkles, 
-  Calendar, 
-  Zap, 
+  Search, 
   Loader2, 
-  Search,
-  CheckCircle2,
+  Layers, 
+  Radio, 
+  BarChart3, 
+  Globe, 
   SlidersHorizontal,
   Compass,
-  Layers,
-  TrendingUp,
-  Radio,
-  Settings,
-  Flame,
-  FileSpreadsheet
+  ArrowUpRight,
+  ShieldCheck,
+  CheckCircle2,
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 
 export default function Header({ 
@@ -22,164 +22,227 @@ export default function Header({
   setActiveView,
   onFullScan,
   isScanningAll,
-  leadsCount,
-  aiProgressMessage
+  leadsCount = 0,
+  aiProgressMessage = ''
 }) {
-  const currentDate = new Intl.DateTimeFormat('ru-RU', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long' 
-  }).format(new Date());
-
   const navItems = [
-    { id: 'overview', label: 'Обзор' },
-    { id: 'signals', label: 'Сигналы' },
-    { id: 'leads', label: 'Поиск ЛПР' },
-    { id: 'pipelines', label: 'Мои компании' },
-    { id: 'sources', label: 'Автопилот' }
+    { id: 'leads', label: 'Радар лидов', icon: Compass, badge: leadsCount },
+    { id: 'overview', label: 'Аналитика спроса', icon: BarChart3 },
+    { id: 'signals', label: 'Каталог сигналов', icon: Radio },
+    { id: 'pipelines', label: 'Пайплайны', icon: Layers },
+    { id: 'sources', label: 'Источники данных', icon: Globe },
   ];
 
   return (
-    <header className="top-bar" style={{ background: '#ffffff', borderBottom: '1px solid var(--border-subtle)', padding: '16px 28px' }}>
-      {/* Top Row: Title, Floating Pill Navigation, Support & Profile */}
+    <header className="top-bar" style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 28px' }}>
+      {/* Top Row: Brand & Live Beacon, Segmented Nav, Action Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '16px' }}>
         
-        {/* Brand Title with subtle Help circle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-text-black)', letterSpacing: '-0.03em', fontFamily: 'var(--font-heading)' }}>
-            Playbook
-          </h1>
-          <button 
-            type="button"
-            title="Интеллектуальная система квалификации и поиска B2B-заказов StudioRadar"
-            style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
-          >
-            <HelpCircle size={16} />
-          </button>
+        {/* Brand Identity: StudioRadar AI */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setActiveView('leads')}>
+            {/* Custom Radar Beacon Mark */}
+            <div style={{ 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '10px', 
+              background: 'linear-gradient(135deg, #3730a3 0%, #4f46e5 100%)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(79, 70, 229, 0.28)',
+              position: 'relative'
+            }}>
+              <Radar size={20} color="#ffffff" />
+              <div style={{
+                position: 'absolute',
+                top: '4px',
+                right: '4px',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#10b981',
+                boxShadow: '0 0 6px #10b981'
+              }} />
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: 'var(--font-heading)' }}>
+                  StudioRadar
+                </span>
+                <span style={{ 
+                  fontSize: '10px', 
+                  fontWeight: 700, 
+                  background: '#eef2ff', 
+                  color: '#4f46e5', 
+                  padding: '1px 6px', 
+                  borderRadius: '4px',
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: '0.04em'
+                }}>
+                  AI B2B
+                </span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="pulse-dot" style={{ width: '6px', height: '6px' }} />
+                <span>Радар активен · Поиск прямых заказчиков</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Center: Floating Pill Navigation Bar (Exact reference aesthetic) */}
-        <nav className="pill-nav" aria-label="Разделы системы">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={`pill-nav-item ${activeView === item.id ? 'active' : ''}`}
-              type="button"
-            >
-              {item.label}
-            </button>
-          ))}
+        {/* Center: Modern Segmented Navigation Bar */}
+        <nav className="segmented-control" aria-label="Разделы платформы">
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={`segmented-item ${isActive ? 'active' : ''}`}
+                type="button"
+              >
+                <Icon size={14} color={isActive ? '#4f46e5' : '#64748b'} />
+                <span>{item.label}</span>
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: '9999px',
+                    background: isActive ? '#eef2ff' : '#f1f5f9',
+                    color: isActive ? '#4f46e5' : '#64748b',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right: Support & Business Profile Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button 
-            type="button"
-            className="pill-button"
-            title="Служба поддержки и документация"
-            onClick={() => setActiveView('settings')}
-          >
-            <HelpCircle size={14} color="var(--color-text-headline)" />
-            <span>Поддержка</span>
-          </button>
-
-          <button 
-            type="button"
-            className="pill-button"
-            style={{ color: 'var(--color-accent-purple)', borderColor: 'var(--color-accent-lavender)', background: '#faf5ff' }}
-            title="Настройки профиля бизнеса студии"
-            onClick={() => setActiveView('settings')}
-          >
-            <Sparkles size={14} color="var(--color-accent-purple)" />
-            <span>Профиль бизнеса</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Second Row: Subheader with Schedule Status & Main Action Button */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        marginTop: '14px', 
-        paddingTop: '12px', 
-        borderTop: '1px solid #f2f4f7',
-        flexWrap: 'wrap', 
-        gap: '12px' 
-      }}>
-        {/* Date, Refresh Notice & Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="pill-button"
-            onClick={() => setActiveView('overview')}
-            style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 600 }}
-          >
-            <Calendar size={13} color="var(--color-text-headline)" />
-            <span>Записаться на демо</span>
-          </button>
-
-          <span style={{ fontSize: '12px', color: 'var(--color-text-headline)' }}>
-            {currentDate} — оценки пересчитаны сегодня в {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} — проверено {leadsCount} компаний
-          </span>
-        </div>
-
-        {/* Action Buttons: "Открыть список" (exact match to Gradly Playbook) and "Сканировать рынок" */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={() => setActiveView('leads')}
-            className={`pill-button ${activeView === 'leads' ? 'pill-button-primary' : ''}`}
-            style={{ 
-              padding: '7px 16px', 
-              fontSize: '13px',
-              background: activeView === 'leads' ? '#4f46e5' : '#ffffff',
-              color: activeView === 'leads' ? '#ffffff' : '#4f46e5',
-              borderColor: '#c7d2fe'
-            }}
-            type="button"
-          >
-            <Zap size={14} color={activeView === 'leads' ? '#ffffff' : '#4f46e5'} />
-            <span>Открыть список</span>
-          </button>
-
+        {/* Right: Quick Scanner Button & Profile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={onFullScan}
             disabled={isScanningAll}
-            className="pill-button pill-button-primary"
-            style={{ padding: '7px 16px', fontSize: '13px' }}
+            className="btn btn-primary"
+            style={{ 
+              padding: '7px 16px', 
+              borderRadius: '8px',
+              fontSize: '13px',
+              boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)'
+            }}
             type="button"
+            title="Запустить глубокий ИИ-поиск коммерческих заказов и открытых брифов"
           >
             {isScanningAll ? (
               <>
                 <Loader2 size={14} className="spin" />
-                <span>Поиск в сети...</span>
+                <span>Поиск в открытом вебе...</span>
               </>
             ) : (
               <>
                 <Sparkles size={14} />
-                <span>Сканировать рынок</span>
+                <span>Запустить ИИ-радар</span>
               </>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView('settings')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              background: '#ffffff',
+              cursor: 'pointer',
+              color: '#334155'
+            }}
+            title="Настройки профиля студии и параметров поиска"
+          >
+            <div style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '6px',
+              background: '#0f172a',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-mono)'
+            }}>
+              SR
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 600 }}>Профиль студии</span>
           </button>
         </div>
       </div>
 
-      {/* Live Progress Ticker (Clean minimal banner) */}
+      {/* Second Row: Real-time intelligence summary ticker */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        marginTop: '12px', 
+        paddingTop: '10px', 
+        borderTop: '1px solid #f1f5f9',
+        flexWrap: 'wrap', 
+        gap: '12px',
+        fontSize: '12px',
+        color: '#64748b'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0f172a', fontWeight: 600 }}>
+            <ShieldCheck size={14} color="#10b981" />
+            <span>Прямые заказчики без посредников (No-Broker)</span>
+          </span>
+
+          <span style={{ color: '#94a3b8' }}>•</span>
+
+          <span>
+            Обновлено: <strong style={{ color: '#0f172a', fontFamily: 'var(--font-mono)' }}>{new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</strong>
+          </span>
+
+          <span style={{ color: '#94a3b8' }}>•</span>
+
+          <span>
+            Проверено компаний в РФ/СНГ: <strong style={{ color: '#0f172a', fontFamily: 'var(--font-mono)' }}>{leadsCount}</strong>
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '11px', color: '#475467' }}>
+            Целевые услуги: 3D моушн, CGI, 2D анимация, видеопродакшн
+          </span>
+        </div>
+      </div>
+
+      {/* Live AI Progress Notification Ticker */}
       {aiProgressMessage && (
         <div style={{
           marginTop: '10px',
           background: '#f8fafc',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
           padding: '8px 14px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           fontSize: '12px',
-          color: 'var(--color-text-body)'
+          color: '#1e293b'
         }}>
-          <Loader2 size={13} className="spin" color="var(--color-accent-purple)" />
+          <Loader2 size={13} className="spin" color="#4f46e5" />
           <span>{aiProgressMessage}</span>
         </div>
       )}

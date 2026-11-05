@@ -18,7 +18,7 @@ const API_BASE = (typeof window !== 'undefined' && (window.location.origin.inclu
   : "";
 
 export default function App() {
-  const [activeView, setActiveView] = useState('overview'); // 'overview' | 'signals' | 'leads' | 'pipelines' | 'sources' | 'settings'
+  const [activeView, setActiveView] = useState('leads'); // 'leads' | 'overview' | 'signals' | 'pipelines' | 'sources' | 'settings'
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 

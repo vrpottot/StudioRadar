@@ -15,22 +15,23 @@ import {
   Send,
   Globe,
   Zap,
-  Target,
-  Radio
+  Radio,
+  CheckCircle2,
+  SlidersHorizontal
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, TARGET_SERVICES, LEAD_STATUSES, getLeadGrade, LEAD_GRADES } from '../data/leadsData';
 import { exportLeadsToCsv } from '../utils/exportCsv';
 
 export default function LeadTable({ 
-  leads, 
+  leads = [], 
   onSelectLead, 
   searchQuery, 
   setSearchQuery, 
   selectedIndustry, 
   setSelectedIndustry, 
   selectedService, 
-  setSelectedService,
-  onlyWithPhone,
+  setSelectedService, 
+  onlyWithPhone, 
   setOnlyWithPhone,
   leadTypeFilter = 'all',
   setLeadTypeFilter,
@@ -40,15 +41,15 @@ export default function LeadTable({
 }) {
   const getIndustryBadgeColor = (ind) => {
     switch (ind) {
-      case "Продукты питания и напитки": return "bg-[#dceda9] text-[#243c10] border-[#c9dda0]";
-      case "Военная промышленность": return "bg-[#fdf0e6] text-[#7b3306] border-[#f4e6d7]";
-      case "Авто и мото индустрия": return "bg-[#f8f7f4] text-[#3b2a60] border-[#e8e5dc]";
-      case "Банки и финансы": return "bg-[#e7eef6] text-[#1e3a5f] border-[#cde0f1]";
-      case "Газ и нефть": return "bg-[#e0e1f7] text-[#3b2a60] border-[#d4c5f6]";
-      case "Бьюти": return "bg-[#f6c9c0] text-[#6b0c26] border-[#f1b3a7]";
-      case "Электротехника": return "bg-[#f3f1ec] text-[#131313] border-[#e5e2db]";
-      case "Рекламные агентства и продакшн": return "bg-[#f3effb] text-[#3b2a60] border-[#d4c5f6]";
-      default: return "bg-[#f8f7f4] text-[#4a4a4a] border-[#e5e2db]";
+      case "Продукты питания и напитки": return "bg-[#ecfdf5] text-[#065f46] border-[#a7f3d0]";
+      case "Военная промышленность": return "bg-[#fef3c7] text-[#92400e] border-[#fde68a]";
+      case "Авто и мото индустрия": return "bg-[#f1f5f9] text-[#334155] border-[#cbd5e1]";
+      case "Банки и финансы": return "bg-[#eff6ff] text-[#1e40af] border-[#bfdbfe]";
+      case "Газ и нефть": return "bg-[#f5f3ff] text-[#5b21b6] border-[#ddd6fe]";
+      case "Бьюти": return "bg-[#fdf2f8] text-[#9d174d] border-[#fbcfe8]";
+      case "Электротехника": return "bg-[#f8fafc] text-[#0f172a] border-[#e2e8f0]";
+      case "Рекламные агентства и продакшн": return "bg-[#eef2ff] text-[#3730a3] border-[#c7d2fe]";
+      default: return "bg-[#f8fafc] text-[#475467] border-[#e2e8f0]";
     }
   };
 
@@ -57,11 +58,11 @@ export default function LeadTable({
   };
 
   return (
-    <div className="card" style={{ overflow: 'hidden' }}>
-      {/* Category Tabs: Все / Открытые заказы / Сигналы компаний (Minimalist Swiss / Gradly Playbook style) */}
+    <div className="card" style={{ overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
+      {/* Category Segmented Tabs */}
       <div style={{
         padding: '14px 20px',
-        borderBottom: '1px solid var(--border-subtle)',
+        borderBottom: '1px solid #e2e8f0',
         background: '#ffffff',
         display: 'flex',
         alignItems: 'center',
@@ -69,74 +70,77 @@ export default function LeadTable({
         flexWrap: 'wrap',
         gap: '12px'
       }}>
-        <div className="pill-nav">
+        <div className="segmented-control">
           <button
             onClick={() => setLeadTypeFilter && setLeadTypeFilter('all')}
-            className={`pill-nav-item ${leadTypeFilter === 'all' ? 'active' : ''}`}
+            className={`segmented-item ${leadTypeFilter === 'all' ? 'active' : ''}`}
             type="button"
           >
-            Все записи
+            <span>Все записи</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+              ({leads.length})
+            </span>
           </button>
 
           <button
             onClick={() => setLeadTypeFilter && setLeadTypeFilter('order')}
-            className={`pill-nav-item ${leadTypeFilter === 'order' ? 'active' : ''}`}
+            className={`segmented-item ${leadTypeFilter === 'order' ? 'active' : ''}`}
             style={{
-              color: leadTypeFilter === 'order' ? '#065f46' : undefined,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
+              color: leadTypeFilter === 'order' ? '#065f46' : undefined
             }}
             type="button"
           >
             <Zap size={13} color={leadTypeFilter === 'order' ? '#059669' : '#64748b'} />
-            <span>Открытые заказы ({ordersCount})</span>
+            <span>Открытые заказы и тендеры</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+              ({ordersCount})
+            </span>
           </button>
 
           <button
             onClick={() => setLeadTypeFilter && setLeadTypeFilter('signal')}
-            className={`pill-nav-item ${leadTypeFilter === 'signal' ? 'active' : ''}`}
+            className={`segmented-item ${leadTypeFilter === 'signal' ? 'active' : ''}`}
             style={{
-              color: leadTypeFilter === 'signal' ? '#4f46e5' : undefined,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
+              color: leadTypeFilter === 'signal' ? '#4f46e5' : undefined
             }}
             type="button"
           >
-            <Target size={13} color={leadTypeFilter === 'signal' ? '#4f46e5' : '#64748b'} />
-            <span>Сигналы брендов ({signalsCount})</span>
+            <Radio size={13} color={leadTypeFilter === 'signal' ? '#4f46e5' : '#64748b'} />
+            <span>Сигналы брендов</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+              ({signalsCount})
+            </span>
           </button>
         </div>
 
-        <div style={{ fontSize: '12px', color: 'var(--color-text-headline)', fontWeight: 500 }}>
+        <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
           {leadTypeFilter === 'order' 
-            ? 'Прямые заказы и тендеры с площадок с возможностью откликнуться' 
-            : (leadTypeFilter === 'signal' ? 'Активности брендов для прямого выхода на ЛПР' : 'Комплексный B2B-радар заказов и спроса')}
+            ? 'Коммерческие брифы с прямым откликом и подачей коммерческих предложений' 
+            : (leadTypeFilter === 'signal' ? 'Корпоративные триггеры спроса для прямого холодного выхода на ЛПР' : 'Единый поток целевых B2B-заказов и спроса')}
         </div>
       </div>
 
-      {/* Search, Filter & Export Bar (Раздел 9 и 13.7 ТЗ) */}
+      {/* Search, Filter & Export Toolbar */}
       <div style={{ 
-        padding: '16px 20px', 
-        borderBottom: '1px solid var(--border-subtle)', 
-        background: 'var(--color-surface-white)',
+        padding: '14px 20px', 
+        borderBottom: '1px solid #e2e8f0', 
+        background: '#f8fafc',
         display: 'flex',
         flexWrap: 'wrap',
         gap: '12px',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        {/* Search */}
-        <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
-          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+        {/* Search Input */}
+        <div style={{ position: 'relative', flex: '1', minWidth: '240px' }}>
+          <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
           <input 
             type="text" 
             placeholder="Поиск по компании, ЛПР, задаче или номеру..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input-control"
-            style={{ width: '100%', paddingLeft: '36px' }}
+            style={{ width: '100%', paddingLeft: '36px', height: '36px', background: '#ffffff', borderRadius: '8px' }}
           />
         </div>
 
@@ -146,7 +150,7 @@ export default function LeadTable({
             value={selectedIndustry} 
             onChange={(e) => setSelectedIndustry(e.target.value)}
             className="input-control"
-            style={{ cursor: 'pointer' }}
+            style={{ height: '36px', cursor: 'pointer', background: '#ffffff', borderRadius: '8px' }}
           >
             {TARGET_INDUSTRIES.map(ind => (
               <option key={ind} value={ind}>{ind}</option>
@@ -157,7 +161,7 @@ export default function LeadTable({
             value={selectedService} 
             onChange={(e) => setSelectedService(e.target.value)}
             className="input-control"
-            style={{ cursor: 'pointer' }}
+            style={{ height: '36px', cursor: 'pointer', background: '#ffffff', borderRadius: '8px' }}
           >
             {TARGET_SERVICES.map(srv => (
               <option key={srv} value={srv}>{srv}</option>
@@ -168,61 +172,67 @@ export default function LeadTable({
             onClick={() => setOnlyWithPhone(!onlyWithPhone)}
             className="btn"
             style={{
-              background: onlyWithPhone ? 'var(--accent-emerald-subtle)' : '#ffffff',
-              color: onlyWithPhone ? 'var(--accent-emerald-text)' : 'var(--text-secondary)',
-              border: `1px solid ${onlyWithPhone ? 'var(--accent-emerald-border)' : 'var(--border-subtle)'}`
+              height: '36px',
+              padding: '0 12px',
+              borderRadius: '8px',
+              background: onlyWithPhone ? '#ecfdf5' : '#ffffff',
+              color: onlyWithPhone ? '#065f46' : '#475467',
+              border: `1px solid ${onlyWithPhone ? '#a7f3d0' : '#d0d5dd'}`
             }}
+            type="button"
           >
-            <PhoneCall size={14} />
-            <span>С телефоном</span>
+            <PhoneCall size={14} color={onlyWithPhone ? '#059669' : '#64748b'} />
+            <span>Только с телефоном</span>
           </button>
 
-          {/* Export to CSV Button (Раздел 9 и 17 ТЗ) */}
+          {/* Export to CSV Button */}
           <button
             onClick={handleExport}
             className="btn btn-outline"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+            style={{ height: '36px', padding: '0 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}
             title="Экспортировать отфильтрованный список лидов в CSV / Excel"
+            type="button"
           >
-            <Download size={14} color="var(--color-accent-purple)" />
+            <Download size={14} color="#4f46e5" />
             <span>Экспорт CSV</span>
           </button>
         </div>
       </div>
 
-      {/* Table view */}
+      {/* Leads Table */}
       <div style={{ overflowX: 'auto' }}>
         <table className="leads-table">
           <thead>
             <tr>
-              <th>Компания / Сфера</th>
-              <th>Приоритет</th>
-              <th>Контактное лицо (ЛПР)</th>
-              <th>Запрос и услуга</th>
-              <th>Источник</th>
-              <th>Бюджет</th>
-              <th>Статус</th>
-              <th style={{ textAlign: 'right' }}>Действие</th>
+              <th style={{ minWidth: '180px' }}>Компания / Индустрия</th>
+              <th style={{ minWidth: '95px' }}>Скоринг</th>
+              <th style={{ minWidth: '200px' }}>Контактное лицо (ЛПР)</th>
+              <th style={{ minWidth: '260px' }}>Задача и услуга</th>
+              <th style={{ minWidth: '180px' }}>Источник</th>
+              <th style={{ minWidth: '110px' }}>Бюджет</th>
+              <th style={{ minWidth: '130px' }}>Статус</th>
+              <th style={{ textAlign: 'right', minWidth: '50px' }}>Досье</th>
             </tr>
           </thead>
           <tbody>
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                  По заданным фильтрам лидов не найдено. Попробуйте сбросить фильтры.
+                <td colSpan={8} style={{ textAlign: 'center', padding: '48px', color: '#64748b' }}>
+                  По заданным фильтрам лидов не найдено. Попробуйте сбросить фильтры поиска.
                 </td>
               </tr>
             ) : (
               leads.map((lead) => {
                 const grade = getLeadGrade(lead.score);
-                const gradeMeta = LEAD_GRADES[grade];
+                const gradeMeta = LEAD_GRADES[grade] || { badgeBg: '#f1f5f9', badgeText: '#0f172a', badgeBorder: '#cbd5e1' };
+                const isOrder = lead.leadType === 'order';
 
                 return (
                   <tr key={lead.id} onClick={() => onSelectLead(lead)}>
                     {/* Company & Industry */}
-                    <td style={{ minWidth: '170px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--color-text-black)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Building2 size={15} color="var(--color-accent-purple)" />
+                    <td>
+                      <div style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Building2 size={15} color="#4f46e5" />
                         <span>{lead.company}</span>
                       </div>
                       <div style={{ marginTop: '4px' }}>
@@ -232,12 +242,12 @@ export default function LeadTable({
                       </div>
                     </td>
 
-                    {/* Priority Grade (Раздел 7.4 ТЗ) */}
-                    <td style={{ minWidth: '95px' }}>
+                    {/* Priority Score */}
+                    <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span 
                           style={{
-                            fontSize: '12px',
+                            fontSize: '11px',
                             fontWeight: 800,
                             padding: '2px 7px',
                             borderRadius: '4px',
@@ -246,23 +256,22 @@ export default function LeadTable({
                             border: `1px solid ${gradeMeta.badgeBorder}`,
                             fontFamily: 'var(--font-mono)'
                           }}
-                          title={`Грейд ${grade}: ${gradeMeta.name}`}
                         >
                           {grade}
                         </span>
-                        <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--color-text-headline)', fontWeight: 600 }}>
+                        <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#64748b', fontWeight: 600 }}>
                           {lead.score}%
                         </span>
                       </div>
                     </td>
 
                     {/* LPR & Phone */}
-                    <td style={{ minWidth: '190px' }} onClick={(e) => e.stopPropagation()}>
-                      <div style={{ fontWeight: 600, color: 'var(--color-text-black)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <User size={14} color="var(--color-text-headline)" />
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={13} color="#64748b" />
                         <span>{lead.contactName}</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-text-headline)', marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
                         {lead.role}
                       </div>
 
@@ -271,14 +280,14 @@ export default function LeadTable({
                           <a 
                             href={`tel:${lead.phone}`} 
                             className="btn btn-call"
-                            style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '4px', fontFamily: 'var(--font-mono)' }}
+                            style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '6px', fontFamily: 'var(--font-mono)' }}
                             title="Позвонить прямо сейчас"
                           >
-                            <Phone size={11} />
+                            <Phone size={10} />
                             <span>{lead.phone}</span>
                           </a>
                         ) : (
-                          <span style={{ fontSize: '11px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>Телефон в поиске</span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>Телефон в поиске</span>
                         )}
 
                         {lead.telegram && (
@@ -287,32 +296,32 @@ export default function LeadTable({
                             target="_blank"
                             rel="noreferrer"
                             className="btn"
-                            style={{ padding: '4px 7px', fontSize: '11px', borderRadius: '4px', background: '#229ED9', color: '#fff', border: 'none', display: 'flex', alignItems: 'center' }}
+                            style={{ padding: '3px 7px', fontSize: '11px', borderRadius: '6px', background: '#229ED9', color: '#fff', border: 'none', display: 'flex', alignItems: 'center' }}
                             title={`Открыть Telegram: ${lead.telegram}`}
                           >
-                            <Send size={11} />
+                            <Send size={10} />
                           </a>
                         )}
                       </div>
                     </td>
 
                     {/* Request & Service */}
-                    <td style={{ minWidth: '240px', maxWidth: '320px' }}>
+                    <td style={{ maxWidth: '320px' }}>
                       <div style={{ 
                         fontSize: '11px', 
-                        color: 'var(--color-accent-purple)', 
+                        color: '#4f46e5', 
                         fontWeight: 700, 
                         marginBottom: '4px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px'
                       }}>
-                        <Sparkles size={12} />
+                        <Sparkles size={11} />
                         <span>{lead.service}</span>
                       </div>
                       <div style={{ 
                         fontSize: '12px', 
-                        color: 'var(--color-text-body)', 
+                        color: '#334155', 
                         lineHeight: '1.4',
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
@@ -324,9 +333,9 @@ export default function LeadTable({
                     </td>
 
                     {/* Source & Order Type */}
-                    <td style={{ minWidth: '180px' }}>
+                    <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {lead.leadType === 'order' ? (
+                        {isOrder ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <span style={{ 
                               fontSize: '11px', 
@@ -335,7 +344,7 @@ export default function LeadTable({
                               background: '#ecfdf5',
                               border: '1px solid #a7f3d0',
                               padding: '2px 8px',
-                              borderRadius: 'var(--radius-full)',
+                              borderRadius: '9999px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px'
@@ -361,7 +370,7 @@ export default function LeadTable({
                                 title="Перейти на площадку и откликнуться на заказ"
                               >
                                 <span>Откликнуться</span>
-                                <ExternalLink size={11} />
+                                <ExternalLink size={10} />
                               </a>
                             )}
                           </div>
@@ -370,12 +379,12 @@ export default function LeadTable({
                             <span style={{ 
                               fontSize: '11px', 
                               fontFamily: 'var(--font-mono)',
-                              color: 'var(--color-accent-purple)', 
+                              color: '#4f46e5', 
                               fontWeight: 700,
-                              background: '#f3effb',
-                              border: '1px solid #d4c5f6',
+                              background: '#eef2ff',
+                              border: '1px solid #c7d2fe',
                               padding: '2px 8px',
-                              borderRadius: 'var(--radius-full)',
+                              borderRadius: '9999px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px'
@@ -389,32 +398,32 @@ export default function LeadTable({
                                 target="_blank" 
                                 rel="noreferrer" 
                                 onClick={(e) => e.stopPropagation()} 
-                                style={{ color: 'var(--color-text-headline)', display: 'inline-flex', alignItems: 'center' }}
+                                style={{ color: '#64748b', display: 'inline-flex', alignItems: 'center' }}
                                 title="Открыть сайт компании / публикацию"
                               >
-                                <ExternalLink size={12} />
+                                <ExternalLink size={11} />
                               </a>
                             )}
                           </div>
                         )}
-                        <div style={{ fontSize: '11px', color: 'var(--color-text-body)', fontWeight: 500 }}>
+                        <div style={{ fontSize: '11px', color: '#334155', fontWeight: 500 }}>
                           {lead.source || 'Прямой заказчик'}
                         </div>
-                        <div style={{ fontSize: '10px', color: 'var(--color-text-headline)', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
                           {lead.date}
                         </div>
                       </div>
                     </td>
 
                     {/* Budget */}
-                    <td style={{ minWidth: '100px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-black)', fontFamily: 'var(--font-mono)' }}>
+                    <td>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
                         {lead.budget}
                       </span>
                     </td>
 
-                    {/* Status Dropdown */}
-                    <td style={{ minWidth: '130px' }} onClick={(e) => e.stopPropagation()}>
+                    {/* Status Select */}
+                    <td onClick={(e) => e.stopPropagation()}>
                       <select
                         value={lead.status || 'new'}
                         onChange={(e) => onStatusChange(lead.id, e.target.value)}
@@ -423,10 +432,10 @@ export default function LeadTable({
                           padding: '4px 8px', 
                           width: '100%', 
                           cursor: 'pointer',
-                          borderRadius: '4px',
-                          border: '1px solid var(--border-medium)',
-                          background: 'var(--color-surface-white)',
-                          color: 'var(--color-text-black)',
+                          borderRadius: '6px',
+                          border: '1px solid #d0d5dd',
+                          background: '#ffffff',
+                          color: '#0f172a',
                           fontFamily: 'inherit'
                         }}
                       >
@@ -439,21 +448,22 @@ export default function LeadTable({
                     </td>
 
                     {/* Action */}
-                    <td style={{ textAlign: 'right', minWidth: '50px' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <button 
                         onClick={() => onSelectLead(lead)}
                         style={{ 
-                          background: 'var(--color-surface-beige-3)', 
-                          border: '1px solid var(--border-subtle)', 
-                          color: 'var(--color-text-headline)', 
+                          background: '#f8fafc', 
+                          border: '1px solid #e2e8f0', 
+                          color: '#475467', 
                           cursor: 'pointer',
                           padding: '6px',
-                          borderRadius: '4px',
+                          borderRadius: '6px',
                           transition: 'all 0.15s ease'
                         }}
-                        title="Подробнее"
+                        title="Открыть полное досье"
+                        type="button"
                       >
-                        <ChevronRight size={18} />
+                        <ChevronRight size={16} />
                       </button>
                     </td>
                   </tr>
@@ -467,19 +477,20 @@ export default function LeadTable({
       {/* Footer bar */}
       <div style={{ 
         padding: '14px 20px', 
-        borderTop: '1px solid var(--border-subtle)', 
-        background: 'var(--color-surface-beige-2)',
+        borderTop: '1px solid #e2e8f0', 
+        background: '#ffffff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         fontSize: '12px',
-        color: 'var(--color-text-headline)'
+        color: '#64748b'
       }}>
         <div>
-          Отображено: <strong style={{ color: 'var(--color-text-black)', fontFamily: 'var(--font-mono)' }}>{leads.length}</strong> лидов из проверенных источников
+          Отображено: <strong style={{ color: '#0f172a', fontFamily: 'var(--font-mono)' }}>{leads.length}</strong> лидов из проверенных источников
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-accent-purple)', fontWeight: 600 }}>
-          <ShieldCheck size={14} color="var(--color-accent-purple)" /> Все лиды прошли проверку на прямого заказчика (No Broker)
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#059669', fontWeight: 600 }}>
+          <ShieldCheck size={14} color="#059669" /> 
+          <span>Все лиды прошли проверку на прямого заказчика (No Broker)</span>
         </div>
       </div>
     </div>
