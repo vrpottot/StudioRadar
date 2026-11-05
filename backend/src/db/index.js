@@ -1,15 +1,7 @@
 import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { LEADS_FILE, PIPELINES_FILE, SETTINGS_FILE } from '../config/index.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const LEADS_FILE = path.join(__dirname, '..', 'leads.json');
-const PIPELINES_FILE = path.join(__dirname, '..', 'pipelines.json');
-const SETTINGS_FILE = path.join(__dirname, '..', 'settings.json');
-
-// Начальные пайплайны по ТЗ (Раздел 3 и 13.4)
+// Начальные пайплайны по ТЗ
 const INITIAL_PIPELINES = [
   {
     id: "pipe_3d_studios",
@@ -118,7 +110,6 @@ const INITIAL_PIPELINES = [
   }
 ];
 
-// Начальные настройки (Раздел 11 и 16 ТЗ)
 const INITIAL_SETTINGS = {
   notify_on_a_only: true,
   daily_digest_time: "09:00",
@@ -143,29 +134,26 @@ class Database {
   }
 
   async init() {
-    // 1. Лиды
     try {
       const data = await fs.readFile(LEADS_FILE, 'utf-8');
       this.leads = JSON.parse(data);
-    } catch (e) {
+    } catch {
       this.leads = [];
       await this.saveLeads();
     }
 
-    // 2. Пайплайны
     try {
       const pData = await fs.readFile(PIPELINES_FILE, 'utf-8');
       this.pipelines = JSON.parse(pData);
-    } catch (e) {
+    } catch {
       this.pipelines = [...INITIAL_PIPELINES];
       await this.savePipelines();
     }
 
-    // 3. Настройки
     try {
       const sData = await fs.readFile(SETTINGS_FILE, 'utf-8');
       this.settings = { ...INITIAL_SETTINGS, ...JSON.parse(sData) };
-    } catch (e) {
+    } catch {
       this.settings = { ...INITIAL_SETTINGS };
       await this.saveSettings();
     }
@@ -177,17 +165,17 @@ class Database {
     try {
       const data = await fs.readFile(LEADS_FILE, 'utf-8');
       this.leads = JSON.parse(data);
-    } catch (e) {}
+    } catch {}
 
     try {
       const pData = await fs.readFile(PIPELINES_FILE, 'utf-8');
       this.pipelines = JSON.parse(pData);
-    } catch (e) {}
+    } catch {}
 
     try {
       const sData = await fs.readFile(SETTINGS_FILE, 'utf-8');
       this.settings = JSON.parse(sData);
-    } catch (e) {}
+    } catch {}
   }
 
   async saveLeads() {
@@ -281,7 +269,7 @@ class Database {
     };
   }
 
-  // --- ПАЙПЛАЙНЫ (Раздел 3 и 13.4 ТЗ) ---
+  // --- ПАЙПЛАЙНЫ ---
   getAllPipelines() {
     return this.pipelines;
   }
@@ -358,7 +346,7 @@ class Database {
     return copy;
   }
 
-  // --- НАСТРОЙКИ (Раздел 11 и 16 ТЗ) ---
+  // --- НАСТРОЙКИ ---
   getSettings() {
     return this.settings;
   }
