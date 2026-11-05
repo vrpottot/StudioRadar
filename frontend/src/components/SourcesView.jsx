@@ -11,7 +11,11 @@ import {
   ShieldCheck, 
   Globe,
   Building2,
-  Tv
+  Tv,
+  Send,
+  Briefcase,
+  Layers,
+  FileCode
 } from 'lucide-react';
 
 export default function SourcesView({ 
@@ -21,11 +25,12 @@ export default function SourcesView({
   isScanningAll
 }) {
   const sourcesList = [
-    { name: "Google Gemini Web Search", focus: "Прямой поиск открытых потребностей и ТЗ брендов в открытом вебе", status: "online" },
-    { name: "Корпоративные порталы брендов", focus: "Прямые запросы коммерческих предложений на 3D, CGI и видео", status: "online" },
-    { name: "Отраслевые медиа (Habr / VC / Sostav)", focus: "Кейсы студий, анонсы запусков брендов, ребрендинги и рекламные кампании", status: "online" },
-    { name: "Деловые форумы и выставки (Expo)", focus: "Участники ПМЭФ, ИННОПРОМ, ЦИПР с потребностью в видеостенах и 3D", status: "online" },
-    { name: "Партнерская B2B-сеть агентств", focus: "Запросы на субподряд по сложной 3D анимации и графике", status: "online" }
+    { name: "Корпоративные порталы брендов (МТС, Ozon, VK, ПИК, Самолёт)", focus: "Прямые коммерческие закупки и открытые запросы предложений на 3D и видео", status: "online" },
+    { name: "Telegram-каналы продюсеров и агентств (CG Freelance, Norm Rabota, Finder.vc)", focus: "Срочный агентский субподряд, проектные задачи на 3D/моушн с прямыми контактами", status: "online" },
+    { name: "HeadHunter (hh.ru — проектные контракты)", focus: "Проектная работа и аутсорс компьютерной графики для студий и команд", status: "online" },
+    { name: "Хабр Заказы (freelance.habr.com) & Workspace.ru", focus: "B2B заказы на 3D-графику, WebGL, мокапы и видеопродакшн под ключ", status: "online" },
+    { name: "Отраслевые медиа (Sostav, AdIndex, VC)", focus: "Анонсы рекламных кампаний брендов, запуски продуктов и ребрендинги для прямого выхода на ЛПР", status: "online" },
+    { name: "Коммерческая секция B2B-Center", focus: "Тендеры девелоперов и корпораций на презентационные фильмы и 3D туры", status: "online" }
   ];
 
   return (
@@ -34,66 +39,18 @@ export default function SourcesView({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-black)', letterSpacing: '-0.02em' }}>
-            Источники данных и мониторинг
+            Источники данных и каналы поиска
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--color-text-headline)', marginTop: '2px' }}>
-            Прямой поиск коммерческих B2B-заказчиков и брендов через открытый веб и отраслевые медиа
+            Многоканальный интернет-радар: корпоративные порталы, Telegram-сообщества продюсеров, проектные контракты и открытые брифы
           </p>
         </div>
       </div>
 
-      {/* Main Sources Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-        {/* AI Autonomous Hunter Card */}
-        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--accent-emerald-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={18} color="var(--color-accent-green-text)" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>ИИ-Хантер (Google Gemini)</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Прямой Web-поиск B2B-клиентов</div>
-                </div>
-              </div>
-
-              <span className="badge badge-verified">
-                <CheckCircle2 size={12} /> Активен
-              </span>
-            </div>
-
-            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Автономный поиск прямых коммерческих брендов, девелоперов, финтеха и производителей с открытыми запросами на 3D, CGI и промо-ролики.
-            </p>
-
-            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Поиск по 7 целевым коммерческим направлениям студии</div>
-              <div>• Автоматическое определение контактов ЛПР и персонализированный оффер</div>
-            </div>
-          </div>
-
-          <button
-            onClick={onAiHunt}
-            disabled={isAiHunting}
-            className="btn btn-primary"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
-          >
-            {isAiHunting ? (
-              <>
-                <RefreshCw size={14} className="spin" />
-                <span>ИИ ищет прямых заказчиков...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={14} />
-                <span>Запустить поиск прямых клиентов</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Brand Portals Card */}
+      {/* 4 Main Multichannel Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+        
+        {/* Channel 1: Corporate Portals */}
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -102,94 +59,137 @@ export default function SourcesView({
                   <Building2 size={18} color="var(--color-accent-purple)" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Порталы брендов & B2B</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Прямые коммерческие запросы</div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-black)' }}>Порталы брендов</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>МТС, Ozon, VK, ПИК, Самолёт</div>
                 </div>
               </div>
-
               <span className="badge badge-verified">
                 <CheckCircle2 size={12} /> Активен
               </span>
             </div>
-
             <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Мониторинг сайтов крупных брендов и холдингов, запрашивающих коммерческие предложения на графику и видеопроизводство.
+              Прямые коммерческие закупки крупных частных холдингов без бюрократии 44-ФЗ. Запросы на 3D-туры, ролики и графику.
             </p>
-
-            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Проверка коммерческих бюджетов от 1 000 000 ₽</div>
-              <div>• Прямой выход на бренд-директоров и отделы маркетинга</div>
+            <div style={{ marginTop: '10px', fontSize: '11px', color: '#047857', fontWeight: 600 }}>
+              • Прямые бюджеты от 1 500 000 ₽
             </div>
           </div>
-
           <button
             onClick={onAiHunt}
             disabled={isAiHunting}
             className="btn btn-outline"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
           >
-            {isAiHunting ? (
-              <>
-                <RefreshCw size={14} className="spin" />
-                <span>Сканирование брендов...</span>
-              </>
-            ) : (
-              <>
-                <Play size={14} />
-                <span>Собрать прямые запросы</span>
-              </>
-            )}
+            <Play size={13} />
+            <span>Сканировать закупки</span>
           </button>
         </div>
 
-        {/* Media & Design Hubs Card */}
+        {/* Channel 2: Telegram Channels */}
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--color-surface-beige-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Globe size={18} color="var(--color-accent-purple)" />
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Send size={18} color="#0284c7" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-black)' }}>Отраслевые медиа & Кейсы</h3>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>VC, Sostav, Habr Design</div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-black)' }}>Telegram-сообщества</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>CG Freelance, Norm, Finder</div>
                 </div>
               </div>
-
               <span className="badge badge-verified">
                 <CheckCircle2 size={12} /> Активен
               </span>
             </div>
-
             <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
-              Мониторинг отраслевых публикаций о запусках новых линеек продуктов, рекламных кампаний и ребрендингах.
+              Продюсеры агентств и брендов ищут команды на субподряд по 3D, CGI и моушн-дизайну с прямым откликом в Telegram.
             </p>
-
-            <div style={{ marginTop: '12px', padding: '10px', background: 'var(--color-surface-beige-1)', borderRadius: '6px', fontSize: '11px', color: 'var(--color-text-headline)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div>• Отслеживание реального спроса на 3D анимацию и видео</div>
-              <div>• Классификация по отраслям студии</div>
+            <div style={{ marginTop: '10px', fontSize: '11px', color: '#0284c7', fontWeight: 600 }}>
+              • Горячие задачи с быстрым стартом
             </div>
           </div>
+          <button
+            onClick={onAiHunt}
+            disabled={isAiHunting}
+            className="btn btn-outline"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
+          >
+            <Play size={13} />
+            <span>Сканировать Telegram</span>
+          </button>
+        </div>
 
+        {/* Channel 3: HeadHunter Projects */}
+        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Briefcase size={18} color="#dc2626" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-black)' }}>HeadHunter (Контракты)</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Проектная работа и аутсорс</div>
+                </div>
+              </div>
+              <span className="badge badge-verified">
+                <CheckCircle2 size={12} /> Активен
+              </span>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
+              Поиск компаний, нанимающих проектные продакшн-команды и студии под выпуск серий роликов и презентационной графики.
+            </p>
+            <div style={{ marginTop: '10px', fontSize: '11px', color: '#dc2626', fontWeight: 600 }}>
+              • Подтвержденные контакты работодателей
+            </div>
+          </div>
+          <button
+            onClick={onAiHunt}
+            disabled={isAiHunting}
+            className="btn btn-outline"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
+          >
+            <Play size={13} />
+            <span>Сканировать HeadHunter</span>
+          </button>
+        </div>
+
+        {/* Channel 4: Habr Freelance & Workspace */}
+        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--accent-emerald-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Globe size={18} color="var(--color-accent-green-text)" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-black)' }}>Хабр Заказы & Workspace</h3>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-headline)' }}>Технологичные 3D и видео брифы</div>
+                </div>
+              </div>
+              <span className="badge badge-verified">
+                <CheckCircle2 size={12} /> Активен
+              </span>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-body)', lineHeight: 1.4 }}>
+              Открытые заявки бизнеса на 3D WebGL, визуализацию техники, брендовые эксплейнеры и рекламное видео.
+            </p>
+            <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-accent-green-text)', fontWeight: 600 }}>
+              • Прямая кнопка подачи заявки
+            </div>
+          </div>
           <button
             onClick={onFullScan}
             disabled={isScanningAll}
-            className="btn btn-outline"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px' }}
+            className="btn btn-primary"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
           >
-            {isScanningAll ? (
-              <>
-                <RefreshCw size={14} className="spin" />
-                <span>Сквозной сбор...</span>
-              </>
-            ) : (
-              <>
-                <Play size={14} />
-                <span>Сквозной сбор по всем источникам</span>
-              </>
-            )}
+            {isScanningAll ? <RefreshCw size={13} className="spin" /> : <Sparkles size={13} />}
+            <span>Запустить сквозной поиск</span>
           </button>
         </div>
+
       </div>
 
       {/* Detailed Sources List Table */}
@@ -197,28 +197,23 @@ export default function SourcesView({
         <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-black)', marginBottom: '12px' }}>
           Список подключенных источников мониторинга
         </div>
-
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <table className="leads-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--color-text-headline)', fontSize: '11px', textTransform: 'uppercase' }}>
-                <th style={{ padding: '10px' }}>Площадка / Источник</th>
-                <th style={{ padding: '10px' }}>Фокус мониторинга</th>
-                <th style={{ padding: '10px' }}>Статус</th>
+              <tr>
+                <th>Канал данных</th>
+                <th>Специализация и охват</th>
+                <th style={{ textAlign: 'center' }}>Статус</th>
               </tr>
             </thead>
             <tbody>
-              {sourcesList.map((ch, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid var(--color-surface-beige-2)' }}>
-                  <td style={{ padding: '10px', fontWeight: 600, color: 'var(--color-text-black)' }}>
-                    {ch.name}
-                  </td>
-                  <td style={{ padding: '10px', color: 'var(--color-text-body)' }}>
-                    {ch.focus}
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    <span className="badge badge-verified" style={{ fontSize: '10px' }}>
-                      Онлайн
+              {sourcesList.map((src, idx) => (
+                <tr key={idx}>
+                  <td style={{ fontWeight: 600, color: 'var(--color-text-black)' }}>{src.name}</td>
+                  <td style={{ color: 'var(--color-text-headline)', fontSize: '12px' }}>{src.focus}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className="badge badge-verified">
+                      <CheckCircle2 size={11} /> Активен
                     </span>
                   </td>
                 </tr>

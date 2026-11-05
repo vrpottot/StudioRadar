@@ -9,11 +9,17 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
-// Поисковые запросы по ОТКРЫТЫМ КОММЕРЧЕСКИМ ЗАКАЗАМ И БРИФАМ (Workspace, B2B-Center)
-const OPEN_ORDERS_QUERIES = [
-  'site:workspace.ru/tenders/ "видео" OR "3D" OR "анимация"',
-  'site:b2b-center.ru/market/ "видеоролик" OR "анимация" OR "3D" OR "CGI"',
-  '"тендер на создание" ("3D" OR "видеоролика" OR "анимации") -44-ФЗ -223-ФЗ 2024'
+// Поисковые запросы по 4 ключевым каналам прямых коммерческих заказов:
+// 1. Корпоративные порталы прямых закупок брендов (МТС, Ozon, ПИК, Самолёт)
+// 2. Профессиональные Telegram-каналы продюсеров и агентский субподряд (CG Freelance, Norm Rabota)
+// 3. HeadHunter проектные контракты для продакшн-команд (hh.ru)
+// 4. Хабр Заказы (IT/B2B 3D) и Workspace.ru
+const MULTICHANNEL_ORDER_QUERIES = [
+  'site:tenders.mts.ru OR site:pik.ru OR site:samolet.ru OR site:suppliers.ozon.ru "видео" OR "3D"',
+  'site:t.me ("ищем продакшн" OR "ищем студию" OR "ищем команду") ("3D" OR "видеоролик" OR "анимация")',
+  'site:hh.ru/vacancy "проектная работа" ("3D" OR "моушн-дизайн" OR "видеоролик")',
+  'site:freelance.habr.com OR site:workspace.ru/tenders/ "3D" OR "анимация" OR "видео"',
+  'site:b2b-center.ru/market/ "видеоролик" OR "анимация" OR "3D" OR "CGI"'
 ];
 
 // Целевые запросы в отраслевые медиа брендов (Sostav, AdIndex, VC)
@@ -50,12 +56,12 @@ export async function runAutonomousAiLeadHunt(onProgress = null) {
 
   const tavilyKey = (process.env.TAVILY_API_KEY || '').trim();
 
-  // 1. Поиск РЕАЛЬНЫХ ОТКРЫТЫХ ЗАКАЗОВ И ТЕНДЕРОВ (Workspace.ru, B2B-Center)
+  // 1. Полномасштабный поиск прямых заказов (Корпоративные закупки, Telegram, HeadHunter, Хабр Заказы)
   if (tavilyKey) {
     try {
-      const shuffledOrders = [...OPEN_ORDERS_QUERIES].sort(() => 0.5 - Math.random());
+      const shuffledOrders = [...MULTICHANNEL_ORDER_QUERIES].sort(() => 0.5 - Math.random());
       const orderQuery = shuffledOrders[0];
-      log(`🔎 Поиск открытых коммерческих заказов и брифов: «${orderQuery}»...`);
+      log(`🔎 Многоканальный поиск заказов и субподрядов: «${orderQuery}»...`);
 
       const openOrders = await searchOpenOrdersWithTavily(orderQuery);
       if (openOrders && openOrders.length > 0) {
