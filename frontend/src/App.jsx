@@ -60,8 +60,16 @@ export default function App() {
       const res = await fetch(`${API_BASE}/api/leads`);
       if (res.ok) {
         const data = await res.json();
+        const isBannedSource = (item) => {
+          const text = `${item.id || ''} ${item.company || ''} ${item.source || ''} ${item.url || ''} ${item.contact_name || ''} ${item.request_text || ''}`.toLowerCase();
+          return text.includes('telegram') || text.includes('t.me') || 
+                 text.includes('fl.ru') || text.includes('kwork') || 
+                 text.includes('freelance') || text.includes('workspace.ru') || 
+                 text.includes('b2b-center') || text.includes('тендер') || text.includes('hh.ru');
+        };
+
         const formatted = data
-          .filter(item => !item.id.startsWith('lead-'))
+          .filter(item => !isBannedSource(item))
           .map(item => ({
             id: item.id,
             company: item.company,
@@ -74,7 +82,7 @@ export default function App() {
             email: item.email,
             source: item.source,
             sourceType: item.source_type,
-            leadType: item.lead_type || (item.id.startsWith('order-') || (item.source && (item.source.includes('Заказ') || item.source.includes('Бриф') || item.source.includes('Exa'))) ? 'order' : 'signal'),
+            leadType: item.lead_type || (item.id.startsWith('order-') || (item.source && (item.source.includes('Заказ') || item.source.includes('Бриф'))) ? 'order' : 'signal'),
             budget: item.budget,
             score: item.score,
             grade: getLeadGrade(item.score || 70),

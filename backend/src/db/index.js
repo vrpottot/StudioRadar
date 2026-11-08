@@ -126,6 +126,20 @@ const INITIAL_SETTINGS = {
   ai_provider: "autonomous"
 };
 
+// Список запрещенных источников и паттернов (фриланс, TG, тендеры, HR)
+export const BANNED_PATTERNS = [
+  'telegram', 't.me', 'fl.ru', 'kwork', 'freelance', 'workspace.ru',
+  'b2b-center', 'тендер', 'тендерный', 'hh.ru', 'headhunter',
+  'zakupki', 'rostender', 'youdo', 'weblancer', 'freelancer',
+  'superjob', 'rabota.ru', 'zarplata.ru'
+];
+
+export function isBannedLead(l) {
+  if (!l) return true;
+  const text = `${l.id || ''} ${l.company || ''} ${l.source || ''} ${l.url || ''} ${l.apply_url || ''} ${l.contact_name || ''} ${l.request_text || ''}`.toLowerCase();
+  return BANNED_PATTERNS.some(p => text.includes(p));
+}
+
 class Database {
   constructor() {
     this.leads = [];
@@ -136,7 +150,11 @@ class Database {
   async init() {
     try {
       const data = await fs.readFile(LEADS_FILE, 'utf-8');
-      this.leads = JSON.parse(data);
+      const loaded = JSON.parse(data);
+      this.leads = loaded.filter(l => !isBannedLead(l));
+      if (this.leads.length !== loaded.length) {
+        await this.saveLeads();
+      }
     } catch {
       this.leads = [];
       await this.saveLeads();
@@ -205,8 +223,8 @@ class Database {
   // --- ЛИДЫ ---
   getAllLeads() {
     return this.leads
-      .filter(l => !l.id.startsWith('lead-'))
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      .filter(l => !isBannedLead(l))
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }
 
   getLeadById(id) {
@@ -214,6 +232,11 @@ class Database {
   }
 
   async addLead(leadData) {
+    if (isBannedLead(leadData)) {
+      console.warn('[Database] Отклонена попытка добавить лид из запрещенного источника (ТГ/Фриланс/Тендер):', leadData?.company, leadData?.source);
+      return null;
+    }
+
     const existing = this.leads.find(l => 
       l.id === leadData.id || 
       (l.company && leadData.company && 
