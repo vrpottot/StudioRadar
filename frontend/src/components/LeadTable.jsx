@@ -24,6 +24,7 @@ import { exportLeadsToCsv } from '../utils/exportCsv';
 
 export default function LeadTable({ 
   leads = [], 
+  totalCount = 0,
   onSelectLead, 
   searchQuery, 
   setSearchQuery, 
@@ -78,7 +79,7 @@ export default function LeadTable({
           >
             <span>Все записи</span>
             <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-              ({leads.length})
+              ({totalCount || (ordersCount + signalsCount) || leads.length})
             </span>
           </button>
 

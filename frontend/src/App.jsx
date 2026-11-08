@@ -402,6 +402,7 @@ export default function App() {
               <StatsCards leads={leads} />
               <LeadTable 
                 leads={filteredLeads}
+                totalCount={leads.length}
                 onSelectLead={setSelectedLead}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
