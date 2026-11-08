@@ -64,8 +64,9 @@ export default function App() {
           const text = `${item.id || ''} ${item.company || ''} ${item.source || ''} ${item.url || ''} ${item.contact_name || ''} ${item.request_text || ''}`.toLowerCase();
           return text.includes('telegram') || text.includes('t.me') || 
                  text.includes('fl.ru') || text.includes('kwork') || 
-                 text.includes('freelance.ru') || text.includes('freelancehunt') || 
-                 text.includes('zakupki.gov') || text.includes('rostender') || 
+                 text.includes('freelance') || text.includes('workspace') || 
+                 text.includes('b2b-center') || text.includes('tender') || text.includes('тендер') ||
+                 text.includes('zakupki') || text.includes('rostender') || 
                  text.includes('44-фз') || text.includes('223-фз') || text.includes('hh.ru');
         };
 
