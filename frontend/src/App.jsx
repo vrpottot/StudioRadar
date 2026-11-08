@@ -64,8 +64,9 @@ export default function App() {
           const text = `${item.id || ''} ${item.company || ''} ${item.source || ''} ${item.url || ''} ${item.contact_name || ''} ${item.request_text || ''}`.toLowerCase();
           return text.includes('telegram') || text.includes('t.me') || 
                  text.includes('fl.ru') || text.includes('kwork') || 
-                 text.includes('freelance') || text.includes('workspace.ru') || 
-                 text.includes('b2b-center') || text.includes('тендер') || text.includes('hh.ru');
+                 text.includes('freelance.ru') || text.includes('freelancehunt') || 
+                 text.includes('zakupki.gov') || text.includes('rostender') || 
+                 text.includes('44-фз') || text.includes('223-фз') || text.includes('hh.ru');
         };
 
         const formatted = data
@@ -82,7 +83,7 @@ export default function App() {
             email: item.email,
             source: item.source,
             sourceType: item.source_type,
-            leadType: item.lead_type || (item.id.startsWith('order-') || (item.source && (item.source.includes('Заказ') || item.source.includes('Бриф'))) ? 'order' : 'signal'),
+            leadType: item.lead_type || (item.url && (item.url.includes('/tenders/') || item.url.includes('/market/')) ? 'order' : (item.id.startsWith('order-') ? 'order' : 'signal')),
             budget: item.budget,
             score: item.score,
             grade: getLeadGrade(item.score || 70),

@@ -1,50 +1,45 @@
 /**
  * sources.js — Реестр источников, площадок, стоп-доменов и поисковых запросов для ИИ-радара
- * Сфокусирован ИСКЛЮЧИТЕЛЬНО на прямых B2B-заказах и коммерческих брендах.
- * Фриланс-биржи, Telegram-каналы и тендерные площадки полностью исключены.
+ * Сфокусирован на прямых B2B-заказах с прямыми ссылками на брифы и маркетинговых сигналах брендов.
+ * Фриланс-биржи с демпингом, Telegram-каналы и гостендеры 44/223-ФЗ строго исключены.
  */
 
 // Черный список доменов для Exa, Tavily и локальных фильтров
 export const EXCLUDE_DOMAINS = [
-  // 1. Биржи фриланса и агрегаторы частных исполнителей
+  // 1. Биржи фриланса и агрегаторы частных исполнителей (демпинг и копеечные заказы)
   'fl.ru', 'kwork.ru', 'freelance.ru', 'freelancehunt.com', 'weblancer.net',
-  'work-zilla.com', 'youdo.com', 'dtf.ru', 'habr.com', 'freelance.habr.com',
-  'profi.ru', 'freelancer.com', 'upwork.com', 'fiverr.com', 'render.ru',
+  'work-zilla.com', 'youdo.com', 'dtf.ru', 'freelance.habr.com',
+  'profi.ru', 'freelancer.com', 'upwork.com', 'fiverr.com', 'render.ru/ru/jobs/freelance',
   'allfreelance.ru', 'kadrof.ru',
 
   // 2. Telegram-каналы и социальные агрегаторы
   't.me', 'telegram.org', 'tgstat.ru', 'telemetr.me',
   'instagram.com', 'tiktok.com', 'youtube.com', 'pinterest.com',
 
-  // 3. Тендерные агрегаторы, аукционы и государственные закупки
-  'zakupki.gov.ru', 'rostender.info', 'b2b-center.ru', 'sberbank-ast.ru',
+  // 3. Государственные бюджетные закупки (44-ФЗ, 223-ФЗ, школы, больницы, госаукционы)
+  'zakupki.gov.ru', 'rostender.info', 'sberbank-ast.ru',
   'tenderdetail.com', 'rts-tender.ru', 'roseltorg.ru', 'tektorg.ru',
-  'etp-ets.ru', 'fabrikant.ru', 'workspace.ru', 'tenderguru.ru', 'tendersontime.com',
-  'zakupki.tochka.com', 'bicotender.ru', 'all-tenders.ru', 'goszakupki.ru',
-  'estp.ru', 'lot-online.ru', 'etp-avtodor.ru', 'gz-spb.ru', 'etprf.ru',
+  'etp-ets.ru', 'goszakupki.ru', 'bicotender.ru', 'all-tenders.ru',
 
   // 4. Доски вакансий для найма в штат / резюме соискателей
   'hh.ru', 'superjob.ru', 'rabota.ru', 'zarplata.ru', 'avito.ru/rabota'
 ];
 
-// Поисковые запросы, ориентированные на ПРЯМЫЕ заказы брендов и коммерческих клиентов:
-// 1. Анонсы рекламных кампаний и запуски продуктов брендов (FMCG, ритейл, авто, финтех)
-// 2. Прямые брифы и запросы предложений на продакшн студии
-// 3. Корпоративные порталы прямого сотрудничества с брендами
+// Поисковые запросы по ПРЯМЫМ ЗАКАЗАМ с прямыми ссылками на карточки брифов/задач:
 export const ORDER_SEARCH_QUERIES = [
-  'site:sostav.ru OR site:adindex.ru ("запустил" OR "представил" OR "кампания") ("3D ролик" OR "CGI" OR "анимация" OR "видео")',
-  'site:vc.ru OR site:new-retail.ru ("запустили" OR "представили новую линейку" OR "рекламная кампания") ("3D" OR "видеоролик" OR "CGI")',
-  'site:mts.ru OR site:ozon.ru OR site:sber.ru OR site:x5.ru OR site:samolet.ru OR site:magnit.ru ("видеоролик" OR "3D" OR "анимация" OR "CGI")',
-  '"ищем студию" OR "ищем продакшн" ("3D графика" OR "презентационный фильм" OR "анимационный ролик")',
-  '"запрос коммерческих предложений" ("видеопродакшн" OR "3D анимация" OR "компьютерная графика") -тендер -госзакупка',
-  'site:sostav.ru "директор по маркетингу" ("3D" OR "CGI" OR "анимация" OR "новый продукт")'
+  'site:workspace.ru/tenders/ "3D" OR "анимация" OR "видеоролик" OR "CGI" OR "моушн"',
+  'site:b2b-center.ru/market/ "видеоролик" OR "анимация" OR "3D" OR "CGI"',
+  'site:tenders.mts.ru OR site:suppliers.ozon.ru "видео" OR "3D" OR "анимация"',
+  'site:vc.ru ("ищем студию" OR "ищем продакшн" OR "бриф на создание") ("3D" OR "видеоролик")',
+  '"бриф на производство" ("видеоролика" OR "3D анимации" OR "CGI") "заказчик" -site:fl.ru -site:kwork.ru'
 ];
 
-// Дополнительные запросы в отраслевые медиа для отслеживания маркетинговых кампаний брендов
+// Запросы в отраслевые медиа для отслеживания МАРКЕТИНГОВЫХ СИГНАЛОВ брендов:
 export const MEDIA_SEARCH_QUERIES = [
-  "site:sostav.ru 'запустил' 'ролик' OR '3D' OR 'CGI'",
-  "site:adindex.ru 'кампания' 'видеоролик' OR '3D'",
-  "site:vc.ru 'запустили' '3D ролик' OR 'CGI' OR 'анимация'"
+  "site:sostav.ru ('запустил' OR 'представил') ('ролик' OR '3D' OR 'CGI')",
+  "site:adindex.ru ('кампания' OR 'промо') ('видеоролик' OR '3D')",
+  "site:vc.ru ('запустили' OR 'презентовали') ('3D ролик' OR 'CGI' OR 'анимация')",
+  "site:new-retail.ru ('рекламная кампания' OR 'запуск') ('3D' OR 'ролик')"
 ];
 
 // Целевые коммерческие направления студии для ИИ-разведки
@@ -72,11 +67,18 @@ export const TARGET_INDUSTRIES = [
 // Каталог открытых площадок и платформ прямого спроса
 export const PLATFORM_REGISTRY = [
   {
+    id: "workspace_briefs",
+    name: "Открытые брифы Workspace.ru",
+    description: "Прямые коммерческие брифы агентств и брендов на 3D, моушн и видеопроизводство с прямым откликом",
+    domains: ["workspace.ru"],
+    type: "direct_order"
+  },
+  {
     id: "corporate_brands",
-    name: "Корпоративные порталы брендов",
-    description: "Прямые коммерческие холдинги и бренды (МТС, Ozon, X5 Group, ПИК, Самолёт)",
-    domains: ["mts.ru", "ozon.ru", "x5.ru", "samolet.ru", "pik.ru"],
-    type: "direct_procurement"
+    name: "Корпоративные закупки частных холдингов",
+    description: "Прямые коммерческие запросы предложений брендов (МТС, Ozon, X5 Group, B2B-Center коммерческий)",
+    domains: ["tenders.mts.ru", "suppliers.ozon.ru", "b2b-center.ru"],
+    type: "direct_order"
   },
   {
     id: "industry_media",
@@ -84,12 +86,5 @@ export const PLATFORM_REGISTRY = [
     description: "Анонсы рекламных кампаний, запуски продуктов и ребрендинги для прямого выхода на ЛПР брендов",
     domains: ["sostav.ru", "adindex.ru", "vc.ru", "new-retail.ru"],
     type: "market_signals"
-  },
-  {
-    id: "direct_briefs",
-    name: "Прямые коммерческие брифы",
-    description: "Запросы предложений на продакшн, 3D графику и презентационные фильмы от частного бизнеса",
-    domains: ["vc.ru", "sostav.ru", "habr.com"],
-    type: "direct_order"
   }
 ];

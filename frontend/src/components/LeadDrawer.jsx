@@ -370,10 +370,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNote }
                     gap: '4px',
                     textDecoration: 'none'
                   }}
-                  title={lead.leadType === 'order' ? 'Перейти к источнику заказа / публикации' : 'Перейти на сайт компании / публикацию'}
+                  title={lead.leadType === 'order' ? 'Перейти напрямую к карточке заказа и ТЗ' : 'Перейти к публикации / на сайт компании'}
                 >
                   <ExternalLink size={12} />
-                  <span>{lead.leadType === 'order' ? 'Открыть источник заказа ↗' : (lead.url ? lead.url.replace(/^https?:\/\/(www\.)?/, '') : 'Первоисточник')}</span>
+                  <span>{lead.leadType === 'order' ? 'Открыть карточку заказа и ТЗ ↗' : (lead.url ? lead.url.replace(/^https?:\/\/(www\.)?/, '') : 'Первоисточник')}</span>
                 </a>
               )}
               <span style={{ fontFamily: 'var(--font-mono)' }}>Дата: {date}</span>

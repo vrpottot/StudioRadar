@@ -350,7 +350,7 @@ export default function LeadTable({
                               gap: '4px'
                             }}>
                               <Zap size={11} />
-                              <span>Открытый заказ</span>
+                              <span>Прямой заказ</span>
                             </span>
                             {(lead.applyUrl || lead.url) && (
                               <a 
@@ -367,9 +367,9 @@ export default function LeadTable({
                                   gap: '2px',
                                   textDecoration: 'none'
                                 }}
-                                title="Перейти на площадку и откликнуться на заказ"
+                                title="Перейти напрямую к карточке заказа и ТЗ"
                               >
-                                <span>Откликнуться</span>
+                                <span>К заказу</span>
                                 <ExternalLink size={10} />
                               </a>
                             )}
@@ -398,10 +398,19 @@ export default function LeadTable({
                                 target="_blank" 
                                 rel="noreferrer" 
                                 onClick={(e) => e.stopPropagation()} 
-                                style={{ color: '#64748b', display: 'inline-flex', alignItems: 'center' }}
-                                title="Открыть сайт компании / публикацию"
+                                style={{ 
+                                  color: '#64748b', 
+                                  fontSize: '11px', 
+                                  fontWeight: 600, 
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '2px',
+                                  textDecoration: 'none'
+                                }}
+                                title="Открыть инфоповод бренда / публикацию в СМИ"
                               >
-                                <ExternalLink size={11} />
+                                <span>Инфоповод</span>
+                                <ExternalLink size={10} />
                               </a>
                             )}
                           </div>

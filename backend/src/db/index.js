@@ -126,12 +126,13 @@ const INITIAL_SETTINGS = {
   ai_provider: "autonomous"
 };
 
-// Список запрещенных источников и паттернов (фриланс, TG, тендеры, HR)
+// Список запрещенных источников и паттернов (копеечный фриланс, TG, гостендеры 44/223-ФЗ, HR-вакансии)
 export const BANNED_PATTERNS = [
-  'telegram', 't.me', 'fl.ru', 'kwork', 'freelance', 'workspace.ru',
-  'b2b-center', 'тендер', 'тендерный', 'hh.ru', 'headhunter',
-  'zakupki', 'rostender', 'youdo', 'weblancer', 'freelancer',
-  'superjob', 'rabota.ru', 'zarplata.ru'
+  'telegram', 't.me', 'fl.ru', 'kwork', 'freelance.ru', 'freelancehunt',
+  'weblancer', 'work-zilla', 'youdo', 'dtf.ru',
+  'zakupki.gov.ru', 'rostender.info', 'sberbank-ast.ru',
+  '44-фз', '223-фз', 'госзакупка', 'электронный аукцион',
+  'hh.ru', 'superjob.ru', 'rabota.ru', 'zarplata.ru'
 ];
 
 export function isBannedLead(l) {
