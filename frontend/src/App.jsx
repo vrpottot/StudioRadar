@@ -1,3 +1,4 @@
+import { requestJson } from './utils/api';
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -39,6 +40,9 @@ export default function App() {
   const [isScanningAll, setIsScanningAll] = useState(false);
   const [isAiHunting, setIsAiHunting] = useState(false);
   const [aiProgressMessage, setAiProgressMessage] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [backendError, setBackendError] = useState('');
+  const [storageInfo, setStorageInfo] = useState(null);
 
   // Загрузка пайплайнов с бэкенда
   const fetchBackendPipelines = async () => {
@@ -57,9 +61,9 @@ export default function App() {
   // Загрузка лидов с бэкенда
   const fetchBackendLeads = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/leads`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await requestJson(`${API_BASE}/api/leads`);
+      setBackendError('');
+      {
         const formatted = data
           .map(item => ({
             id: item.id,
@@ -88,9 +92,11 @@ export default function App() {
             date: item.created_at ? item.created_at.replace('T', ' ').slice(0, 16) : ""
           }));
         setLeads(formatted);
+        try { setStorageInfo(await requestJson(`${API_BASE}/api/stats`)); } catch {}
       }
     } catch (e) {
       console.warn("Бэкенд пока не ответил:", e.message);
+      setBackendError(`Не удалось загрузить лиды: ${e.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +128,10 @@ export default function App() {
             fetchBackendPipelines();
           }
           if (msg.type === "ai_progress" && msg.message) {
-            setAiProgressMessage(msg.message);
+            if (msg.message.startsWith('Ошибка ИИ-поиска:')) {
+              setAiError(msg.message);
+              setAiProgressMessage('');
+            } else setAiProgressMessage(msg.message);
           }
         } catch (err) {}
       };
@@ -168,19 +177,19 @@ export default function App() {
   // Сканирование ИИ
   const handleAiHunt = async () => {
     if (isAiHunting) return;
+    setAiError('');
     setIsAiHunting(true);
     setAiProgressMessage("ИИ запускает поиск прямых B2B клиентов в интернете...");
 
     try {
-      const res = await fetch(`${API_BASE}/api/ai/hunt`, { method: "POST" });
-      const data = await res.json();
+      const data = await requestJson(`${API_BASE}/api/ai/hunt`, { method: "POST" });
       await fetchBackendLeads();
       setAiProgressMessage(data.message || "ИИ-поиск завершен.");
       setTimeout(() => setAiProgressMessage(''), 8000);
     } catch (err) {
       console.warn("Ошибка ИИ-поиска:", err);
-      setAiProgressMessage("Сбой связи при ИИ-поиске");
-      setTimeout(() => setAiProgressMessage(''), 5000);
+      setAiError(err.message);
+      setAiProgressMessage('');
     } finally {
       setIsAiHunting(false);
     }
@@ -189,19 +198,19 @@ export default function App() {
   // Сквозной сбор по всем источникам (ЕИС Закупки + Habr Design + AI Web Hunter)
   const handleFullScan = async () => {
     if (isScanningAll) return;
+    setAiError('');
     setIsScanningAll(true);
     setAiProgressMessage("ИИ запускает поиск прямых заказов и кампаний брендов (Exa & Tavily)...");
 
     try {
-      const res = await fetch(`${API_BASE}/api/scan`, { method: "POST" });
-      const data = await res.json();
+      const data = await requestJson(`${API_BASE}/api/scan`, { method: "POST" });
       await fetchBackendLeads();
       setAiProgressMessage(data.message || `Сквозной сбор завершен! Найдено ${data.new_leads_found || 0} новых лидов.`);
       setTimeout(() => setAiProgressMessage(''), 8000);
     } catch (err) {
       console.warn("Ошибка сквозного сканирования:", err);
-      setAiProgressMessage("Сбой при выполнении сквозного сканирования.");
-      setTimeout(() => setAiProgressMessage(''), 5000);
+      setAiError(err.message);
+      setAiProgressMessage('');
     } finally {
       setIsScanningAll(false);
     }
@@ -361,6 +370,15 @@ export default function App() {
         />
 
         <div className="content-body">
+          {(aiError || backendError) && <div role="alert" style={{ padding: 18, marginBottom: 20, border: '1px solid #fda29b', background: '#fff4f2', color: '#b42318', borderRadius: 8 }}>
+            <strong>{aiError ? 'Поиск не завершён — это ошибка, а не нулевая выдача.' : 'Нет связи с данными backend.'}</strong>
+            <p style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{aiError || backendError}</p>
+            {aiError && <button className="btn btn-outline" style={{ marginTop: 12 }} onClick={() => setActiveView('settings')}>Настроить и проверить AI</button>}
+          </div>}
+          {isLoading && <p role="status">Загрузка базы…</p>}
+          {storageInfo?.hidden_by_policy > 0 && <div style={{ padding: 16, marginBottom: 20, background: '#fffaeb', border: '1px solid #fedf89', borderRadius: 8 }}>
+            В базе сохранено {storageInfo.stored_total} записей. Из них {storageInfo.hidden_by_policy} не соответствуют текущим источникам или правилам и скрыты; данные не удалены. Показано подходящих записей: {leads.length}.
+          </div>}
           {/* 1. ЭКРАН "ОБЗОР" (Раздел 13.3 ТЗ) */}
           {activeView === 'overview' && (
             <OverviewView 

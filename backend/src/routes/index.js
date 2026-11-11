@@ -1,3 +1,4 @@
+import { safeErrorMessage } from '../../../ai/llm.js';
 import { Router } from 'express';
 import leadsRouter from './leads.js';
 import statsRouter from './stats.js';
@@ -32,7 +33,7 @@ router.post('/api/scan', async (req, res) => {
     const result = await executeAiHunt({ limit: 5 });
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message) });
   }
 });
 

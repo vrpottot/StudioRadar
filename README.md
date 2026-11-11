@@ -17,7 +17,7 @@
 Для работы нужны `EXA_API_KEY` и/или `TAVILY_API_KEY`, а также `GEMINI_API_KEY` или `OPENROUTER_API_KEY` в `backend/.env`. Используйте свои действующие ключи; в этот набор изменений ключи не включены.
 
 ```bash
-npm test --prefix ai        # 33 офлайн-проверки, без расходов API
+npm test --prefix ai        # 44 офлайн-проверки, без расходов API
 npm run build --prefix frontend
 # Платный smoke-test по реальным источникам, только при настроенных ключах:
 RUN_LIVE_HUNT=1 node ai/test_hunt.js

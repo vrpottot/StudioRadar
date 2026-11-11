@@ -1,3 +1,4 @@
+import { applyAiSettings } from '../../../ai/llm.js';
 import { Router } from 'express';
 import { db } from '../db/index.js';
 
@@ -17,13 +18,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const updated = await db.updateSettings(req.body);
-    if (req.body.gemini_api_key !== undefined) {
-      process.env.GEMINI_API_KEY = req.body.gemini_api_key;
-      process.env.Google_api = req.body.gemini_api_key;
-    }
-    if (req.body.openrouter_api_key !== undefined) {
-      process.env.OPENROUTER_API_KEY = req.body.openrouter_api_key;
-    }
+    applyAiSettings(updated);
     res.json({ success: true, settings: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
