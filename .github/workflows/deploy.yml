@@ -2,81 +2,66 @@ name: Deploy StudioRadar to Production Server
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: studioradar-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Build & Deploy to VPS
+    name: Test, Build & Deploy to VPS
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
-      - name: 📦 Build Frontend
+      - name: Test AI and build frontend
         run: |
-          cd frontend
-          npm install
-          npm run build
+          npm ci --prefix backend --omit=dev
+          npm ci --prefix ai --omit=dev
+          npm test --prefix ai
+          npm ci --prefix frontend
+          npm run build --prefix frontend
+          bash -n scripts/deploy.sh
 
-      - name: 📦 Package Deployment Bundle
+      - name: Package deployment without live data or secrets
         run: |
-          mkdir -p staging/backend staging/frontend staging/ai
+          mkdir -p staging/backend staging/frontend staging/ai staging/bootstrap
           cp -r backend/src staging/backend/
           cp backend/package.json backend/package-lock.json staging/backend/
-          cp backend/leads.json staging/backend/
-          cp backend/pipelines.json staging/backend/
-          cp backend/settings.json staging/backend/
-          cp -r ai/* staging/ai/
+          cp backend/leads.json backend/pipelines.json backend/settings.json staging/bootstrap/
+          cp ai/*.js ai/package.json ai/package-lock.json staging/ai/
           cp -r frontend/dist staging/frontend/
-          tar -czf deploy.tar.gz -C staging backend frontend ai
+          cp scripts/deploy.sh staging/deploy.sh
+          tar -czf deploy.tar.gz -C staging backend frontend ai bootstrap deploy.sh
 
-      - name: 🚀 Upload Bundle to Server via SCP
+      - name: Upload bundle via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 79.137.199.70
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
-          source: "deploy.tar.gz"
-          target: "/tmp"
+          source: deploy.tar.gz
+          target: /tmp
 
-      - name: 🔄 Extract and Restart Services on Server
+      - name: Deploy with backup and rollback
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 79.137.199.70
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
+          command_timeout: 15m
           script: |
-            mkdir -p /var/www/studioradar
-            tar -xzf /tmp/deploy.tar.gz -C /var/www/studioradar
+            set -eu
+            release=$(mktemp -d /var/tmp/studioradar-release.XXXXXX)
+            tar -xzf /tmp/deploy.tar.gz -C "$release"
             rm -f /tmp/deploy.tar.gz
-            
-            # Ensure .env exists with required Google API key and Tavily key
-            touch /var/www/studioradar/backend/.env
-            grep -q "Google_api=" /var/www/studioradar/backend/.env || echo "Google_api=AQ.Ab8RN6IFIcUnLOJyumxwoY5lLqRncubGLeHH5KUjhdsl8kyBig" >> /var/www/studioradar/backend/.env
-            grep -q "GEMINI_API_KEY=" /var/www/studioradar/backend/.env || echo "GEMINI_API_KEY=AQ.Ab8RN6IFIcUnLOJyumxwoY5lLqRncubGLeHH5KUjhdsl8kyBig" >> /var/www/studioradar/backend/.env
-            grep -q "PORT=" /var/www/studioradar/backend/.env || echo "PORT=8001" >> /var/www/studioradar/backend/.env
-            sed -i '/TAVILY_API_KEY=/d' /var/www/studioradar/backend/.env
-            echo "TAVILY_API_KEY=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" >> /var/www/studioradar/backend/.env
-            sed -i '/EXA_API_KEY=/d' /var/www/studioradar/backend/.env
-            echo "EXA_API_KEY=e1e4efeb-b461-4c1f-ba30-76162da7be60" >> /var/www/studioradar/backend/.env
-
-            # Install production dependencies for backend and ai
-            cd /var/www/studioradar/backend
-            npm install --omit=dev
-            cd /var/www/studioradar/ai
-            npm install --omit=dev
-            
-            # Restart backend and reload nginx
-            systemctl restart studioradar
-            systemctl reload nginx
-            
-            # Verify status
-            systemctl is-active --quiet studioradar && echo "✅ StudioRadar backend is active and running!" || exit 1
+            bash "$release/deploy.sh" "$release"
