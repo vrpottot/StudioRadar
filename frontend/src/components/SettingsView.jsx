@@ -22,6 +22,9 @@ export default function SettingsView() {
   const [notifyOnAOnly, setNotifyOnAOnly] = useState(true);
   const [dailyDigestTime, setDailyDigestTime] = useState('09:00');
   const [minScoreThreshold, setMinScoreThreshold] = useState(70);
+  const [saveError, setSaveError] = useState('');
+  const [aiCheck, setAiCheck] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -70,6 +73,7 @@ export default function SettingsView() {
   }, []);
 
   const handleSave = async () => {
+    setSaveError('');
     try {
       const payload = {
         notify_on_a_only: notifyOnAOnly,
@@ -79,23 +83,36 @@ export default function SettingsView() {
         cheap_stop_words: cheapStopWords,
         education_stop_words: educationStopWords,
         ai_provider: aiProvider,
-        gemini_api_key: geminiApiKey,
-        openrouter_api_key: openrouterApiKey
+        ...(geminiApiKey.trim() ? { gemini_api_key: geminiApiKey.trim() } : {}),
+        ...(openrouterApiKey.trim() ? { openrouter_api_key: openrouterApiKey.trim() } : {})
       };
 
-      await fetch(`${API_BASE}/api/settings`, {
+      const res = await fetch(`${API_BASE}/api/settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
+      if (!res.ok) throw new Error('Не удалось сохранить настройки');
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2500);
     } catch (e) {
       console.error("Ошибка сохранения настроек:", e);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2500);
+      setIsSaved(false);
+      setSaveError(e.message);
     }
+  };
+
+  const handleCheckAi = async () => {
+    setIsChecking(true);
+    setAiCheck('Проверяем подключение…');
+    try {
+      const res = await fetch(`${API_BASE}/api/ai/check`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI-квалификатор недоступен');
+      setAiCheck(data.message);
+    } catch (error) { setAiCheck(error.message); }
+    finally { setIsChecking(false); }
   };
 
   return (
@@ -121,6 +138,13 @@ export default function SettingsView() {
         </button>
       </div>
 
+      {saveError && <div role="alert" style={{ color: '#b42318' }}>{saveError}</div>}
+      <div className="card" style={{ padding: 16 }}>
+        <p>Exa и Tavily ищут страницы. Gemini или OpenRouter проверяет, является ли публикация заказом. Для этого нужен действующий ключ AI-провайдера.</p>
+        <button className="btn btn-outline" disabled={isChecking} onClick={handleCheckAi} style={{ marginTop: 12 }}>Проверить подключение AI</button>
+        <p style={{ marginTop: 8 }}>Сначала сохраните настройки. Проверка выполняет небольшой запрос к выбранному AI-провайдеру.</p>
+        {aiCheck && <p role="status" style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{aiCheck}</p>}
+      </div>
       {/* AI Engine & Web Access Settings */}
       <div className="card" style={{ padding: '20px', border: '1px solid var(--color-accent-purple)', background: '#faf9ff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
@@ -148,8 +172,8 @@ export default function SettingsView() {
               className="input-control"
               style={{ width: '100%', padding: '8px 12px', fontSize: '13px' }}
             >
-              <option value="autonomous">Встроенный автономный агент StudioRadar (Бесплатно, 0 API-ключей, полный доступ в веб)</option>
-              <option value="gemini">Google Gemini 2.0 Flash (Бесплатный API ключ с Google Search Grounding)</option>
+              <option value="autonomous">Автоматически: Gemini → OpenRouter (нужен ключ AI-провайдера)</option>
+              <option value="gemini">Google Gemini (для квалификации найденных заказов)</option>
               <option value="openrouter">OpenRouter API (DeepSeek / Claude 3.5 / GPT-4o)</option>
             </select>
           </div>

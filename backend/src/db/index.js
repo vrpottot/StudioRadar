@@ -261,18 +261,21 @@ class Database {
   }
 
   getStats() {
-    const total = this.leads.length;
-    const withPhone = this.leads.filter(l => Boolean(l.phone)).length;
-    const unconfirmed = this.leads.filter(l => !l.phone || l.status === 'contacts_unconfirmed').length;
-    const inProgress = this.leads.filter(l => ['in_progress', 'called', 'negotiation'].includes(l.status)).length;
-    const closed = this.leads.filter(l => l.status === 'closed').length;
+    const visible = this.getAllLeads();
+    const total = visible.length;
+    const withPhone = visible.filter(l => Boolean(l.phone)).length;
+    const unconfirmed = visible.filter(l => !l.phone || l.status === 'contacts_unconfirmed').length;
+    const inProgress = visible.filter(l => ['in_progress', 'called', 'negotiation'].includes(l.status)).length;
+    const closed = visible.filter(l => l.status === 'closed').length;
 
     return {
       total_leads: total,
+      stored_total: this.leads.length,
+      hidden_by_policy: this.leads.length - total,
       with_phone: withPhone,
       unconfirmed_phone: unconfirmed,
       with_phone_pct: total ? Math.round((withPhone / total) * 100) : 0,
-      direct_clients_pct: 100,
+      direct_clients_pct: total ? Math.round(visible.filter(l => l.verified_direct).length / total * 100) : 0,
       in_progress: inProgress,
       closed: closed
     };

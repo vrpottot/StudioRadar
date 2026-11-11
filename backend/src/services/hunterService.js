@@ -1,3 +1,4 @@
+import { applyAiSettings, checkLlm } from '../../../ai/llm.js';
 import { huntOrders } from '../../../ai/index.js';
 import { db } from '../db/index.js';
 import { broadcast } from '../ws/index.js';
@@ -15,6 +16,10 @@ export async function executeAiHunt({ query = null, limit = 5 } = {}) {
   };
 
   try {
+    await db.reload();
+    applyAiSettings(db.getSettings());
+    onProgress('Проверка подключения к AI-квалификатору…');
+    await checkLlm();
     const foundLeads = await huntOrders({ onProgress, query, limit, excludeUrls: db.getAllLeads().map(lead => lead.url) });
     const addedLeads = [];
 
