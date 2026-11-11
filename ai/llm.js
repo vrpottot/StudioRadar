@@ -31,6 +31,7 @@ export async function callGemini(prompt, isJson = true) {
     throw new Error('Ключ Google Gemini не найден в переменных окружения');
   }
 
+
   const models = ['gemini-flash-lite-latest', 'gemini-3-flash-preview', 'gemini-2.5-flash'];
   for (const model of models) {
     try {
