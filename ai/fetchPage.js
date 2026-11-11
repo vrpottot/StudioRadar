@@ -3,6 +3,7 @@
  */
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { sourcePlatform } from './policy.js';
 
 const REQUEST_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
@@ -23,7 +24,9 @@ export async function fetchPageContent(url, timeoutMs = 6000) {
   }
 
   try {
-    const response = await axios.get(url, {
+    const requestUrl = sourcePlatform(url) === 'telegram'
+      ? url.replace('/s/', '/') + '?embed=1&mode=tme' : url;
+    const response = await axios.get(requestUrl, {
       timeout: timeoutMs,
       headers: REQUEST_HEADERS,
       maxRedirects: 4,
@@ -48,7 +51,8 @@ export async function fetchPageContent(url, timeoutMs = 6000) {
                         $('meta[property="og:description"]').attr('content') || '';
 
     // Чистый текст контента
-    const rawText = $('body').text() || '';
+    const published = $('time[datetime]').first().attr('datetime') || $('meta[property="article:published_time"]').attr('content');
+    const rawText = (published ? `Дата публикации: ${published} ` : '') + ($('body').text() || '');
     const cleanText = rawText
       .replace(/\s+/g, ' ')
       .replace(/[\r\n\t]+/g, ' ')

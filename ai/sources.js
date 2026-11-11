@@ -1,51 +1,28 @@
-/**
- * sources.js — Реестр источников, стоп-доменов и поисковых запросов для ИИ-радара
- * Сфокусирован ИСКЛЮЧИТЕЛЬНО на прямых коммерческих брендах и кампаниях.
- * Биржи фриланса, Telegram и любые тендерные площадки (включая Workspace и B2B-Center) ПОЛНОСТЬЮ ИСКЛЮЧЕНЫ.
- */
-
-// Черный список доменов для Exa, Tavily и локальных фильтров
+/** Public sources for direct production orders in Russia and the CIS. */
 export const EXCLUDE_DOMAINS = [
-  // 1. Биржи фриланса и частные агрегаторы
   'fl.ru', 'kwork.ru', 'freelance.ru', 'freelancehunt.com', 'weblancer.net',
-  'work-zilla.com', 'youdo.com', 'dtf.ru', 'freelance.habr.com',
-  'profi.ru', 'freelancer.com', 'upwork.com', 'fiverr.com', 'render.ru',
-  'allfreelance.ru', 'kadrof.ru',
-
-  // 2. Telegram-каналы и соцсети
-  't.me', 'telegram.org', 'tgstat.ru', 'telemetr.me',
-  'instagram.com', 'tiktok.com', 'youtube.com', 'pinterest.com',
-
-  // 3. Тендерные площадки, агрегаторы и госзакупки ЛЮБОГО ТИПА
+  'work-zilla.com', 'youdo.com', 'freelance.habr.com', 'profi.ru',
+  'freelancer.com', 'upwork.com', 'fiverr.com', 'allfreelance.ru', 'kadrof.ru',
   'workspace.ru', 'b2b-center.ru', 'zakupki.gov.ru', 'rostender.info',
   'sberbank-ast.ru', 'tenderdetail.com', 'rts-tender.ru', 'roseltorg.ru',
   'tektorg.ru', 'etp-ets.ru', 'fabrikant.ru', 'tenderguru.ru',
   'tendersontime.com', 'zakupki.tochka.com', 'bicotender.ru', 'all-tenders.ru',
-  'goszakupki.ru', 'tenders.mts.ru', 'suppliers.ozon.ru',
-
-  // 4. Доски вакансий для найма в штат / резюме соискателей
-  'hh.ru', 'superjob.ru', 'rabota.ru', 'zarplata.ru', 'avito.ru/rabota'
+  'goszakupki.ru', 'tenders.mts.ru', 'suppliers.ozon.ru'
 ];
 
-// Поисковые запросы по ПРЯМЫМ коммерческим кампаниям и запускам продуктов брендов
-// Каждая найденная ссылка ведет НА СТАТЬЮ / ПУБЛИКАЦИЮ О ПРОЕКТЕ С ДЕТАЛЯМИ И ЛПР
-export const ORDER_SEARCH_QUERIES = [
-  'site:sostav.ru ("запустил" OR "представил" OR "кампания") ("3D ролик" OR "CGI" OR "моушн-дизайн" OR "анимация")',
-  'site:adindex.ru ("рекламная кампания" OR "промо ролик" OR "3D") ("бренд" OR "запуск")',
-  'site:new-retail.ru ("запустил" OR "кампания" OR "ролики с 3D" OR "CGI")',
-  'site:vc.ru ("запустили" OR "представили новую") ("3D" OR "CGI" OR "видеоролик") бренд',
-  'site:sostav.ru "директор по маркетингу" ("3D" OR "CGI" OR "анимация" OR "видеоролик")'
+export const TELEGRAM_MIN_BUDGET_RUB = 900_000;
+export const SEARCH_MAX_AGE_DAYS = 30;
+export const TARGET_COUNTRIES = [
+  'Россия', 'Беларусь', 'Казахстан', 'Армения', 'Азербайджан',
+  'Кыргызстан', 'Узбекистан', 'Таджикистан', 'Молдова', 'Туркменистан'
+];
+export const PLATFORM_REGISTRY = [
+  { id: 'hh', name: 'HeadHunter — проектный подряд', domains: ['hh.ru', 'hh.kz', 'hh.uz', 'hh.kg', 'hh1.az', 'rabota.by'] },
+  { id: 'telegram', name: 'Telegram — публичные заказы от 900 000 ₽', domains: ['t.me'] },
+  { id: 'linkedin', name: 'LinkedIn — публичные запросы компаний', domains: ['linkedin.com'] },
+  { id: 'facebook', name: 'Facebook — публичные запросы компаний', domains: ['facebook.com'] }
 ];
 
-// Дополнительные запросы в отраслевые медиа для отслеживания маркетинговых кампаний брендов
-export const MEDIA_SEARCH_QUERIES = [
-  "site:sostav.ru ('запустил' OR 'представил') ('ролик' OR '3D' OR 'CGI')",
-  "site:adindex.ru ('кампания' OR 'промо') ('видеоролик' OR '3D')",
-  "site:vc.ru ('запустили' OR 'презентовали') ('3D ролик' OR 'CGI' OR 'анимация')",
-  "site:new-retail.ru ('рекламная кампания' OR 'запуск') ('3D' OR 'ролик')"
-];
-
-// Целевые коммерческие направления студии для ИИ-разведки
 export const TARGET_SERVICES = [
   "3D моушен-дизайн и анимация",
   "2D моушен-дизайн и анимация",
@@ -67,13 +44,30 @@ export const TARGET_INDUSTRIES = [
   "Недвижимость и девелопмент"
 ];
 
-// Каталог открытых площадок и медиа
-export const PLATFORM_REGISTRY = [
-  {
-    id: "industry_media",
-    name: "Отраслевые медиа (Sostav, AdIndex, VC, New-Retail)",
-    description: "Анонсы рекламных кампаний, запуски продуктов и ребрендинги для прямого выхода на ЛПР брендов",
-    domains: ["sostav.ru", "adindex.ru", "vc.ru", "new-retail.ru"],
-    type: "market_signals"
-  }
+
+const SERVICE_TERMS = [
+  '3D CGI моушн motion design', '2D animation анимация эксплейнер',
+  'AI video ИИ видеоролик', '2D 3D мультипликация', 'WebGL interactive 3D интерактив'
 ];
+const INDUSTRY_TERMS = [
+  'FMCG продукты напитки', 'военная промышленность', 'авто мото',
+  'банк финтех', 'нефть газ', 'beauty косметика', 'электротехника',
+  'рекламное агентство продакшн', 'недвижимость девелопер'
+];
+
+// Every run covers all platforms and all configured industries, rather than one random query.
+// Rotate service/country emphasis daily; the classifier always checks the full target lists.
+export function buildSearchJobs({ query = null, now = new Date() } = {}) {
+  const day = Math.floor(now.getTime() / 86_400_000);
+  return PLATFORM_REGISTRY.flatMap(platform => TARGET_INDUSTRIES.map((industry, i) => {
+    const region = TARGET_COUNTRIES[(day + i) % TARGET_COUNTRIES.length];
+    const intent = platform.id === 'telegram'
+      ? 'ищем студию подрядчика бюджет от 900000 рублей'
+      : 'ищем подрядчика студию проект outsourcing production partner';
+    return {
+      platform: platform.id, industry, includeDomains: platform.domains,
+      query: [query, INDUSTRY_TERMS[i], SERVICE_TERMS[(day + i) % SERVICE_TERMS.length], intent, region].filter(Boolean).join(' ')
+    };
+  }));
+}
+export const ORDER_SEARCH_QUERIES = buildSearchJobs().map(job => job.query);

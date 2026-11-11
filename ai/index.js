@@ -1,175 +1,91 @@
-/**
- * ai/index.js — Главная точка входа ИИ-модуля поиска и квалификации B2B-заказов
- * Экспортирует одну функцию: huntOrders(), которую вызывает backend.
- * Бэкенд ничего не знает про Exa, Tavily, Gemini или парсинг страниц.
- * Фриланс-биржи, Telegram и тендеры полностью исключены.
- */
-import { searchWeb, searchWithGeminiGrounding } from './search.js';
+import { createHash } from 'node:crypto';
+import { searchWeb } from './search.js';
 import { fetchPageContent } from './fetchPage.js';
 import { classifyLeadWithLlm } from './classify.js';
-import { 
-  extractContactsFromWebsite, 
-  extractPhoneFromText, 
-  extractEmailFromText, 
-  extractTelegramFromText 
-} from './extractContacts.js';
-import { ORDER_SEARCH_QUERIES } from './sources.js';
+import { extractPhoneFromText, extractEmailFromText, extractTelegramFromText } from './extractContacts.js';
+import { buildSearchJobs, PLATFORM_REGISTRY } from './sources.js';
+import { canonicalUrl, sourcePlatform, isExcludedUrl, isBannedLead } from './policy.js';
 
-/**
- * Определение читаемого названия прямого источника
- * @param {string} url 
- * @param {string} engineSource 
- * @returns {string}
- */
-function resolveSourceLabel(url, engineSource) {
-  if (!url) return engineSource || 'Прямой заказчик';
-  const u = url.toLowerCase();
-  if (u.includes('sostav.ru')) return 'Sostav.ru (Рекламная кампания)';
-  if (u.includes('adindex.ru')) return 'AdIndex.ru (Пресс-релиз бренда)';
-  if (u.includes('vc.ru')) return 'VC.ru (Бизнес-сигнал бренда)';
-  if (u.includes('new-retail.ru') || u.includes('retail.ru')) return 'Retail-медиа (Запуск продукта)';
-  if (u.includes('mts.ru') || u.includes('ozon.ru') || u.includes('x5.ru') || u.includes('samolet.ru') || u.includes('sber.ru')) {
-    return 'Корпоративный портал бренда';
-  }
-  if (engineSource === 'Exa Semantic Search') return 'Exa (Прямой заказчик)';
-  if (engineSource === 'Tavily Search') return 'Tavily (Прямой заказчик)';
-  return 'Корпоративный веб-сайт';
+async function mapConcurrent(items, workers, fn) {
+  let next = 0;
+  const result = new Array(items.length);
+  await Promise.all(Array.from({ length: Math.min(workers, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      result[i] = await fn(items[i], i);
+    }
+  }));
+  return result;
 }
 
-/**
- * Автономный поиск и разбор прямых коммерческих заказов и брендовых кампаний
- * @param {object} options
- * @param {function} [options.onProgress] - Коллбек прогресса (message: string)
- * @param {string} [options.query] - Пользовательский поисковый запрос (опционально)
- * @param {number} [options.limit] - Максимальное количество лидов для поиска
- * @returns {Promise<Array<object>>} Список подтвержденных лидов
- */
-export async function huntOrders({ onProgress = null, query = null, limit = 5 } = {}) {
-  const leads = [];
-  const report = (msg) => {
-    console.log(`[AI Module] ${msg}`);
-    if (typeof onProgress === 'function') onProgress(msg);
+/** Four public platforms × all configured industries; bounded search and qualification costs. */
+export async function huntOrders({ onProgress, query = null, limit = 5, excludeUrls = [] } = {}, dependencies = {}) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error('limit должен быть целым числом от 1 до 20');
+  if (query !== null && (typeof query !== 'string' || query.length > 500)) throw new Error('query: строка до 500 символов');
+  const search = dependencies.search || searchWeb;
+  const fetchPage = dependencies.fetchPage || fetchPageContent;
+  const classify = dependencies.classify || classifyLeadWithLlm;
+  const now = dependencies.now || new Date();
+  const report = message => {
+    console.log(`[AI Module] ${message}`);
+    onProgress?.(message);
   };
-
-  report('Запуск семантического радара прямых B2B-заказов (Exa & Tavily)...');
-
-  // 1. Определение поискового запроса
-  const searchQuery = query || ORDER_SEARCH_QUERIES[Math.floor(Math.random() * ORDER_SEARCH_QUERIES.length)];
-  report(`Поиск по прямым заказчикам и кампаниям брендов: «${searchQuery}»...`);
-
-  // 2. Семантический веб-поиск через Exa (с fallback на Tavily)
-  const searchResults = await searchWeb(
-    searchQuery, 
-    limit * 2,
-    'Goal for this search: Find direct commercial corporate clients, companies, and brands in Russia seeking professional production studios for 3D motion design, CGI, 2D animation, and product commercials. STRICTLY EXCLUDE freelance marketplaces (fl.ru, kwork), EXCLUDE telegram channels, and EXCLUDE public government or portal tenders.'
-  );
-
-  if (searchResults.length > 0) {
-    report(`Найдено ${searchResults.length} кандидатов (${searchResults[0]?.source || 'Web Search'}). Анализ содержимого...`);
-
-    for (const res of searchResults) {
-      if (leads.length >= limit) break;
-
-      report(`Анализ источника: ${res.title.slice(0, 50)}...`);
-
-      // Загрузка содержимого страницы (если есть сниппет/highlights от Exa, используем их)
-      let textToAnalyze = res.snippet;
-      if (!textToAnalyze || textToAnalyze.length < 200) {
-        const pageData = await fetchPageContent(res.url);
-        textToAnalyze = pageData?.text || res.snippet;
-      }
-
-      // Нейросетевая квалификация: прямой заказ / сигнал или нет?
-      const evaluation = await classifyLeadWithLlm({
-        title: res.title,
-        description: res.snippet.slice(0, 300),
-        text: textToAnalyze,
-        url: res.url
-      });
-
-      if (evaluation.isOrder && evaluation.lead) {
-        const lead = evaluation.lead;
-
-        // Извлечение прямых контактов (телефон, email, telegram)
-        let phone = extractPhoneFromText(textToAnalyze);
-        let email = extractEmailFromText(textToAnalyze);
-        let telegram = extractTelegramFromText(textToAnalyze);
-
-        // Если контакты не найдены в тексте брифа, пробуем досканировать сайт компании
-        if (!phone && lead.url) {
-          const siteContacts = await extractContactsFromWebsite(lead.url);
-          phone = siteContacts.phone;
-          email = email || siteContacts.email;
-          telegram = telegram || siteContacts.telegram;
-        }
-
-        const normalizedLead = {
-          id: `order-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          company: lead.company,
-          industry: lead.industry,
-          service: lead.service,
-          request_text: lead.request_text,
-          budget: lead.budget || 'от 1 500 000 ₽',
-          source: resolveSourceLabel(res.url, res.source),
-          source_type: 'direct',
-          lead_type: lead.lead_type || 'order',
-          url: res.url,
-          apply_url: res.url,
-          contact_name: lead.contact_name,
-          role: lead.role,
-          phone: phone || lead.phone || null,
-          email: email || lead.email || null,
-          telegram: telegram || null,
-          suggested_solution: lead.suggested_solution,
-          score: lead.score || 92,
-          verified_direct: true,
-          status: 'new',
-          created_at: new Date().toISOString()
-        };
-
-        leads.push(normalizedLead);
-        report(`Подтвержден прямой клиент: «${lead.company}» — ${lead.service}`);
-      }
-    }
-  }
-
-  // 3. Дополнительный поиск через Google Gemini Grounding, если найдено мало лидов
-  if (leads.length === 0) {
-    report('Поиск прямых маркетинговых триггеров и рекламных кампаний брендов...');
+  const jobs = buildSearchJobs({ query, now });
+  report(`Поиск: HH, Telegram от 900 000 ₽, LinkedIn, Facebook; Россия и СНГ. ${jobs.length} поисковых запросов, до 2 провайдеров на запрос.`);
+  let successfulSearches = 0;
+  const groups = await mapConcurrent(jobs, 3, async job => {
     try {
-      const geminiLeads = await searchWithGeminiGrounding("3D моушен-дизайн, презентационные видеоролики и CGI графика");
-      for (const gLead of geminiLeads) {
-        if (leads.length >= limit) break;
-
-        leads.push({
-          id: `lead-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          company: gLead.company,
-          industry: gLead.industry,
-          service: gLead.service,
-          request_text: gLead.request_text,
-          budget: gLead.budget || 'от 1 500 000 ₽',
-          source: 'Web-поиск (Прямой заказчик)',
-          source_type: 'direct',
-          lead_type: 'signal',
-          url: gLead.url || '',
-          apply_url: gLead.url || '',
-          contact_name: gLead.contact_name || 'Отдел маркетинга',
-          role: gLead.role || 'Бренд-директор',
-          phone: gLead.phone || null,
-          email: gLead.email || null,
-          telegram: null,
-          suggested_solution: gLead.suggested_solution,
-          score: gLead.score || 90,
-          verified_direct: true,
-          status: 'new',
-          created_at: new Date().toISOString()
-        });
+      const results = await search(job.query, 3, null, { includeDomains: job.includeDomains });
+      successfulSearches++;
+      return results.filter(r => !isExcludedUrl(r.url) && sourcePlatform(r.url) === job.platform);
+    } catch {
+      report(`Источник ${job.platform}: запрос не выполнен (${job.industry}).`);
+      return [];
+    }
+  });
+  if (!successfulSearches) throw new Error('Поиск не выполнен. Проверьте EXA_API_KEY/TAVILY_API_KEY, квоты и соединение.');
+  const seen = new Set(excludeUrls.map(canonicalUrl).filter(Boolean));
+  const candidates = [];
+  // Round-robin avoids exhausting the qualification budget on the first platform/industry.
+  for (let rank = 0; rank < 6; rank++) {
+    for (const group of groups) {
+      const candidate = group[rank];
+      const url = candidate && canonicalUrl(candidate.url);
+      if (url && !seen.has(url)) {
+        seen.add(url);
+        candidates.push({ ...candidate, url });
       }
-    } catch (e) {
-      console.warn('[AI Module] Fallback search error:', e.message);
     }
   }
-
-  report(`Поиск завершен. Найдено целевых прямых клиентов: ${leads.length}`);
+  const leads = [];
+  for (const res of candidates.slice(0, 48)) {
+    if (leads.length >= limit) break;
+    report(`Проверка заказа: ${res.title || res.url}`);
+    // Prefer full source text; use engine text if the public page cannot be loaded.
+    const page = await fetchPage(res.url);
+    if (page?.url && sourcePlatform(page.url) !== sourcePlatform(res.url)) continue;
+    const text = page?.text || res.snippet || '';
+    if (!text.trim()) continue;
+    const dateEvidence = res.publishedDate ? `\nДата публикации по данным поискового источника: ${res.publishedDate}` : '';
+    const evidenceText = text + dateEvidence;
+    const evaluation = await classify({ title: res.title, text: evidenceText, url: res.url });
+    if (!evaluation.isOrder) continue;
+    const platform = sourcePlatform(res.url);
+    const lead = {
+      ...evaluation.lead,
+      id: `order-${createHash('sha256').update(res.url).digest('hex').slice(0, 24)}`,
+      title: res.title || evaluation.lead.request_evidence,
+      source: PLATFORM_REGISTRY.find(p => p.id === platform).name,
+      source_platform: platform, search_provider: res.source,
+      source_type: 'direct', lead_type: 'order', url: res.url, apply_url: res.url,
+      phone: extractPhoneFromText(text), email: extractEmailFromText(text),
+      telegram: extractTelegramFromText(text), status: 'new',
+      created_at: now.toISOString(), evidence_checked_at: now.toISOString()
+    };
+    if (isBannedLead(lead)) continue;
+    leads.push(lead);
+    report(`Найден прямой проектный запрос: ${lead.company}`);
+  }
+  report(`Проверено кандидатов не более 48; найдено подходящих заказов: ${leads.length}.`);
   return leads;
 }

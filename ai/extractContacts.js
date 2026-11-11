@@ -60,7 +60,7 @@ export function extractEmailFromText(text) {
 
 export function extractTelegramFromText(text) {
   if (!text) return null;
-  const tgMatch = text.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]{4,})/i) || text.match(/@([a-zA-Z0-9_]{4,})/);
+  const tgMatch = text.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]{4,})/i) || text.match(/(?<![a-zA-Z0-9_.+-])@([a-zA-Z0-9_]{4,})/);
   if (tgMatch) {
     const username = tgMatch[1];
     if (!['share', 'joinchat', 'channel', 'bot', 'all', 'everyone'].includes(username.toLowerCase())) {

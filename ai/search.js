@@ -1,236 +1,67 @@
-/**
- * search.js — Модуль веб-поиска (Exa Semantic Search, Tavily API & Google Search Grounding)
- * Каноническая интеграция Exa Search в соответствии с навыком build-with-exa
- * Настроен СТРОГО на поиск прямых заказов и коммерческих брендов.
- * Фриланс-биржи, Telegram и тендеры исключены на уровне API.
- */
+/** Search engines retrieve evidence; LLMs never invent fallback leads. */
 import Exa from 'exa-js';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { EXCLUDE_DOMAINS } from './sources.js';
+import './llm.js';
+import { EXCLUDE_DOMAINS, SEARCH_MAX_AGE_DAYS } from './sources.js';
+import { canonicalUrl } from './policy.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const OBJECTIVE = 'Find current explicit requests from companies for a production studio or contractor for 3D/2D motion, CGI, AI video, animation or WebGL in Russia and CIS. Include public HH project vacancies, Telegram orders with explicit project budget >=900000 RUB, LinkedIn and Facebook posts. Exclude employee hiring, freelancer portfolios, freelance marketplaces, tenders and completed campaigns.';
 
-dotenv.config({ path: path.resolve(__dirname, '../backend/.env') });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config();
-
-function getExaKey() {
-  return (process.env.EXA_API_KEY || '').trim();
+export async function searchWithExa(query, maxResults = 5, objective = OBJECTIVE, options = {}) {
+  if (!process.env.EXA_API_KEY?.trim()) return [];
+  const exa = new Exa(process.env.EXA_API_KEY.trim());
+  const result = await exa.search(query, {
+    type: 'auto', objective, numResults: maxResults,
+    contents: { text: { maxCharacters: 8000 }, highlights: true },
+    includeDomains: options.includeDomains, excludeDomains: EXCLUDE_DOMAINS,
+    startPublishedDate: options.since, timeout: 20000
+  });
+  return (result.results || []).map(r => ({
+    title: r.title || '', url: r.url || '',
+    snippet: r.text || (r.highlights || []).join('\n'),
+    publishedDate: r.publishedDate || null, source: 'Exa'
+  }));
 }
-
-function getTavilyKey() {
-  return (process.env.TAVILY_API_KEY || '').trim();
+export async function searchWithTavily(query, maxResults = 5, options = {}) {
+  if (!process.env.TAVILY_API_KEY?.trim()) return [];
+  const res = await fetch('https://api.tavily.com/search', {
+    method: 'POST', signal: AbortSignal.timeout(20000),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      api_key: process.env.TAVILY_API_KEY.trim(), query,
+      search_depth: 'advanced', include_answer: false, include_raw_content: true,
+      max_results: maxResults, include_domains: options.includeDomains,
+      exclude_domains: EXCLUDE_DOMAINS, time_range: 'month'
+    })
+  });
+  if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
+  const data = await res.json();
+  return (data.results || []).map(r => ({
+    title: r.title || '', url: r.url || '', snippet: r.raw_content || r.content || '',
+    publishedDate: r.published_date || null, source: 'Tavily'
+  }));
 }
-
-function getGeminiKey() {
-  return (process.env.Google_api || process.env.GEMINI_API_KEY || '').trim();
-}
-
-const DEFAULT_EXA_OBJECTIVE = 'Goal for this search: Find direct commercial corporate clients, companies, and brands in Russia seeking professional production studios for 3D motion design, CGI, 2D animation, and product commercials. STRICTLY EXCLUDE freelance marketplaces (fl.ru, kwork), EXCLUDE telegram channels, and EXCLUDE public government or portal tenders.';
-
-/**
- * Семантический поиск через Exa Search API (Каноническая интеграция build-with-exa)
- * @param {string} query - Поисковый запрос
- * @param {number} maxResults - Количество результатов (по умолчанию 5)
- * @param {string} [objective] - Цель поискового шага для ранжирования и извлечения
- * @returns {Promise<Array<{title: string, url: string, snippet: string, highlights: string[], publishedDate?: string, source: string}>>}
- */
-export async function searchWithExa(
-  query, 
-  maxResults = 5, 
-  objective = DEFAULT_EXA_OBJECTIVE
-) {
-  const apiKey = getExaKey();
-  if (!apiKey) {
-    return [];
+export async function searchWeb(query, maxResults = 5, objective = OBJECTIVE, options = {}, providers = {}) {
+  if (!process.env.EXA_API_KEY?.trim() && !process.env.TAVILY_API_KEY?.trim()) {
+    throw new Error('Настройте EXA_API_KEY или TAVILY_API_KEY в backend/.env');
   }
-
-  try {
-    const exa = new Exa(apiKey);
-    
-    // Рекомендованный Exa запрос: type: "auto", contents: { highlights: true }, objective, excludeDomains
-    const params = {
-      type: "auto",
-      contents: { highlights: true },
-      numResults: maxResults,
-      excludeDomains: EXCLUDE_DOMAINS
-    };
-
-    if (objective) {
-      params.objective = objective;
-    }
-
-    const result = await exa.search(query, params);
-
-    if (result.results && Array.isArray(result.results)) {
-      return result.results.map(r => ({
-        title: r.title || '',
-        url: r.url || '',
-        snippet: Array.isArray(r.highlights) && r.highlights.length > 0 
-          ? r.highlights.join('\n\n') 
-          : (r.text || ''),
-        highlights: r.highlights || [],
-        publishedDate: r.publishedDate || null,
-        source: 'Exa Semantic Search'
-      }));
-    }
-  } catch (err) {
-    console.warn('[AI Search] Ошибка Exa Search:', err.message);
+  const since = options.since || new Date(Date.now() - SEARCH_MAX_AGE_DAYS * 86400000).toISOString();
+  const settled = await Promise.allSettled([
+    (providers.exa || searchWithExa)(query, maxResults, objective || OBJECTIVE, { ...options, since }),
+    (providers.tavily || searchWithTavily)(query, maxResults, options)
+  ]);
+  const active = [Boolean(process.env.EXA_API_KEY?.trim()), Boolean(process.env.TAVILY_API_KEY?.trim())];
+  if (settled.every((r, i) => !active[i] || r.status === 'rejected')) {
+    throw new Error('Exa и Tavily недоступны: проверьте ключи, квоты и соединение');
   }
-
-  return [];
-}
-
-/**
- * Живой поиск через Tavily Search API с жестким исключением фриланс-бирж, ТГ и тендеров
- * @param {string} query - Поисковый запрос
- * @param {number} maxResults - Количество результатов
- * @returns {Promise<Array<{title: string, url: string, snippet: string, source: string}>>}
- */
-export async function searchWithTavily(query, maxResults = 5) {
-  const apiKey = getTavilyKey();
-  if (!apiKey || !apiKey.startsWith('tvly-')) {
-    return [];
+  for (let i = 0; i < settled.length; i++) {
+    if (settled[i].status === 'rejected') console.warn(`[AI Search] ${i === 0 ? 'Exa' : 'Tavily'}: запрос не выполнен`);
   }
-
-  try {
-    const res = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: apiKey,
-        query: query,
-        search_depth: 'basic',
-        include_answer: false,
-        max_results: maxResults,
-        exclude_domains: EXCLUDE_DOMAINS
-      })
-    });
-
-    const data = await res.json();
-    if (data.results && Array.isArray(data.results)) {
-      return data.results.map(r => ({
-        title: r.title || '',
-        url: r.url || '',
-        snippet: r.content || '',
-        source: 'Tavily Search'
-      }));
-    }
-  } catch (err) {
-    console.warn('[AI Search] Ошибка Tavily Search:', err.message);
+  const unique = new Map();
+  for (const result of settled.flatMap(r => r.status === 'fulfilled' ? r.value : [])) {
+    const url = canonicalUrl(result.url);
+    if (!url) continue;
+    const previous = unique.get(url);
+    if (!previous || previous.snippet.length < result.snippet.length) unique.set(url, { ...result, url });
   }
-
-  return [];
-}
-
-/**
- * Универсальный веб-поиск: использует Exa Semantic Search как основной семантический движок,
- * при необходимости переключаясь или дополняя результатами Tavily
- * @param {string} query - Поисковый запрос
- * @param {number} maxResults - Количество результатов
- * @param {string} [objective] - Целевой контекст для Exa
- * @returns {Promise<Array<{title: string, url: string, snippet: string, source: string}>>}
- */
-export async function searchWeb(query, maxResults = 5, objective = null) {
-  const targetObjective = objective || DEFAULT_EXA_OBJECTIVE;
-
-  // 1. Приоритетный поиск через Exa
-  if (getExaKey()) {
-    const exaResults = await searchWithExa(query, maxResults, targetObjective);
-    if (exaResults.length > 0) {
-      return exaResults;
-    }
-  }
-
-  // 2. Резервный поиск через Tavily
-  if (getTavilyKey()) {
-    const tavilyResults = await searchWithTavily(query, maxResults);
-    if (tavilyResults.length > 0) {
-      return tavilyResults;
-    }
-  }
-
-  return [];
-}
-
-/**
- * Поиск и структурирование прямых лидов через Google Gemini со встроенным Google Search
- * @param {string} queryTopic - Описание задачи
- * @returns {Promise<Array<object>>}
- */
-export async function searchWithGeminiGrounding(queryTopic = "3D моушен-дизайн, презентационные видеоролики и CGI графика") {
-  const apiKey = getGeminiKey();
-  if (!apiKey || apiKey.length < 20) {
-    return [];
-  }
-
-  const prompt = `
-Ты — автономный поисковый агент студии StudioRadar.
-Найди 3 РЕАЛЬНЫХ российских бренда / коммерческих компании (FMCG, ритейл, авто, банки, девелопмент, бьюти), у которых запущены новые продукты, ребрендинг или рекламные кампании по направлению:
-«${queryTopic}»
-
-СТРОГИЕ ТРЕБОВАНИЯ:
-- ИСКЛЮЧИТЬ фриланс-биржи (fl.ru, kwork, freelancehunt и др.)
-- ИСКЛЮЧИТЬ Telegram-каналы и чаты
-- ИСКЛЮЧИТЬ государственные закупки и тендерные площадки (44-ФЗ, 223-ФЗ, zakupki.gov.ru, b2b-center)
-- Только реальный коммерческий бизнес и бренды
-- Привести реальный веб-сайт компании и контакты ЛПР (директор по маркетингу, бренд-директор)
-
-Верни ответ СТРОГО в формате JSON массива:
-[
-  {
-    "company": "Название компании или бренда",
-    "industry": "Сфера (Продукты питания и напитки, Недвижимость, Банки, Электротехника и др.)",
-    "service": "3D моушен-дизайн и анимация | CGI графика | 2D анимация",
-    "request_text": "Суть коммерческой задачи / инфоповод бренда",
-    "budget": "Бюджет кампании (например, 'от 1 500 000 ₽')",
-    "url": "Ссылка на сайт компании или публикацию",
-    "contact_name": "ФИО или 'Директор по маркетингу / Бренд-директор'",
-    "role": "Директор по маркетингу / Бренд-менеджер",
-    "phone": "+7 (495) ...",
-    "email": "marketing@...",
-    "score": 92,
-    "suggested_solution": "Предложение студии под задачу"
-  }
-]
-`;
-
-  const models = ['gemini-flash-lite-latest', 'gemini-3-flash-preview', 'gemini-2.5-flash'];
-  for (const model of models) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3
-        }
-      };
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (data.candidates && data.candidates[0]?.content?.parts) {
-        const textPart = data.candidates[0].content.parts.find(p => p.text)?.text || '';
-        const cleaned = textPart.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
-        const jsonMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      }
-    } catch {
-      // Пробуем следующую модель
-    }
-  }
-
-  return [];
+  return [...unique.values()];
 }
