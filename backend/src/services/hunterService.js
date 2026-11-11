@@ -15,7 +15,7 @@ export async function executeAiHunt({ query = null, limit = 5 } = {}) {
   };
 
   try {
-    const foundLeads = await huntOrders({ onProgress, query, limit });
+    const foundLeads = await huntOrders({ onProgress, query, limit, excludeUrls: db.getAllLeads().map(lead => lead.url) });
     const addedLeads = [];
 
     for (const leadData of foundLeads) {
@@ -38,7 +38,7 @@ export async function executeAiHunt({ query = null, limit = 5 } = {}) {
 
     const finalMessage = addedLeads.length > 0
       ? `ИИ нашел и добавил ${addedLeads.length} новых прямых B2B-заказчиков!`
-      : 'ИИ завершил поиск. Все найденные заказы уже сохранены в базе.';
+      : foundLeads.length ? 'Найденные заказы уже сохранены в базе.' : 'Подходящих прямых заказов по заданным условиям не найдено.';
 
     broadcast({ type: 'ai_progress', message: finalMessage });
     setTimeout(() => broadcast({ type: 'ai_progress', message: '' }), 7000);

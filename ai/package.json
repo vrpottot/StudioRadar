@@ -9,5 +9,8 @@
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.7",
     "exa-js": "^2.27.0"
+  },
+  "scripts": {
+    "test": "node --test policy.test.js"
   }
 }

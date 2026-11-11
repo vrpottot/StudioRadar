@@ -1,3 +1,5 @@
+import { isBannedLead, canonicalUrl } from '../../../ai/policy.js';
+export { isBannedLead } from '../../../ai/policy.js';
 import fs from 'fs/promises';
 import { LEADS_FILE, PIPELINES_FILE, SETTINGS_FILE } from '../config/index.js';
 
@@ -126,22 +128,6 @@ const INITIAL_SETTINGS = {
   ai_provider: "autonomous"
 };
 
-// Список запрещенных источников и паттернов (фриланс-биржи, TG, тендерные площадки, Workspace, B2B-Center, HR)
-export const BANNED_PATTERNS = [
-  'telegram', 't.me', 'fl.ru', 'kwork', 'freelance', 'freelancehunt',
-  'weblancer', 'work-zilla', 'youdo', 'dtf.ru',
-  'workspace.ru', 'workspace', 'b2b-center',
-  'tender', 'тендер', 'тендерный', 'zakupki', 'rostender', 'sberbank-ast',
-  '44-фз', '223-фз', 'госзакупка', 'электронный аукцион',
-  'hh.ru', 'superjob.ru', 'rabota.ru', 'zarplata.ru'
-];
-
-export function isBannedLead(l) {
-  if (!l) return true;
-  const text = `${l.id || ''} ${l.company || ''} ${l.source || ''} ${l.url || ''} ${l.apply_url || ''} ${l.contact_name || ''} ${l.request_text || ''}`.toLowerCase();
-  return BANNED_PATTERNS.some(p => text.includes(p));
-}
-
 class Database {
   constructor() {
     this.leads = [];
@@ -153,10 +139,7 @@ class Database {
     try {
       const data = await fs.readFile(LEADS_FILE, 'utf-8');
       const loaded = JSON.parse(data);
-      this.leads = loaded.filter(l => !isBannedLead(l));
-      if (this.leads.length !== loaded.length) {
-        await this.saveLeads();
-      }
+      this.leads = loaded;
     } catch {
       this.leads = [];
       await this.saveLeads();
@@ -235,15 +218,16 @@ class Database {
 
   async addLead(leadData) {
     if (isBannedLead(leadData)) {
-      console.warn('[Database] Отклонена попытка добавить лид из запрещенного источника (ТГ/Фриланс/Тендер):', leadData?.company, leadData?.source);
+      console.warn('[Database] Отклонена попытка добавить лид из запрещенного источника (Фриланс/Тендер/Неподтверждённый бюджет):', leadData?.company, leadData?.source);
       return null;
     }
 
-    const existing = this.leads.find(l => 
-      l.id === leadData.id || 
-      (l.company && leadData.company && 
-       l.company.trim().toLowerCase() === leadData.company.trim().toLowerCase() && 
-       l.title && leadData.title && 
+    const existing = this.leads.find(l =>
+      l.id === leadData.id ||
+      (canonicalUrl(l.url) && canonicalUrl(l.url) === canonicalUrl(leadData.url)) ||
+      (l.company && leadData.company &&
+       l.company.trim().toLowerCase() === leadData.company.trim().toLowerCase() &&
+       l.title && leadData.title &&
        l.title.trim().toLowerCase() === leadData.title.trim().toLowerCase())
     );
     if (existing) return null;

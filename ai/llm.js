@@ -48,6 +48,7 @@ export async function callGemini(prompt, isJson = true) {
 
       const res = await fetch(url, {
         method: 'POST',
+        signal: AbortSignal.timeout(20000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -90,6 +91,7 @@ export async function callOpenRouter(prompt, isJson = true) {
 
   const res = await fetch(url, {
     method: 'POST',
+        signal: AbortSignal.timeout(20000),
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
