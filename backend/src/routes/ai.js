@@ -8,8 +8,7 @@ const router = Router();
 // Small real connectivity probe; no search-engine calls or lead writes.
 router.post('/check', async (req, res) => {
   try {
-    await db.reload();
-    applyAiSettings(db.getSettings());
+    applyAiSettings(await db.getSettings());
     res.json(await checkLlm());
   } catch (err) {
     res.status(503).json({ success: false, code: 'AI_PROVIDER_ERROR', error: safeErrorMessage(err.message) });
@@ -21,21 +20,21 @@ router.post('/hunt', async (req, res) => {
   try {
     const result = await executeAiHunt({
       query: req.body?.query,
-      limit: req.body?.limit || 5
+      limit: req.body?.limit ?? 10
     });
     res.json(result);
   } catch (err) {
-    res.status(err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message) });
+    res.status(err.code === 'HUNT_RUNNING' ? 409 : err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message), retryable: Boolean(err.retryable), partial_result: err.partial_result });
   }
 });
 
 // POST /api/ai/scan (Сквозной сбор по всем каналам)
 router.post('/scan', async (req, res) => {
   try {
-    const result = await executeAiHunt({ limit: 5 });
+    const result = await executeAiHunt({ limit: 10 });
     res.json(result);
   } catch (err) {
-    res.status(err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message) });
+    res.status(err.code === 'HUNT_RUNNING' ? 409 : err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message), retryable: Boolean(err.retryable), partial_result: err.partial_result });
   }
 });
 

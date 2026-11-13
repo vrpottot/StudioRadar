@@ -11,7 +11,6 @@ import PipelineBuilderModal from './components/PipelineBuilderModal';
 import SignalsView from './components/SignalsView';
 import SourcesView from './components/SourcesView';
 import SettingsView from './components/SettingsView';
-import { getSavedPipelines, savePipelines } from './data/pipelinesData';
 import { getLeadGrade } from './data/leadsData';
 
 const API_BASE = (typeof window !== 'undefined' && (window.location.origin.includes(':5173') || window.location.origin.includes(':3000')))
@@ -24,7 +23,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Пайплайны
-  const [pipelines, setPipelines] = useState(() => getSavedPipelines());
+  const [pipelines, setPipelines] = useState([]);
   const [isPipelineBuilderOpen, setIsPipelineBuilderOpen] = useState(false);
 
   // Фильтры лидов
@@ -51,7 +50,6 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setPipelines(data);
-        savePipelines(data);
       }
     } catch (e) {
       console.warn("Ошибка загрузки пайплайнов:", e.message);
@@ -218,74 +216,47 @@ export default function App() {
 
   // Управление пайплайнами (синхронизация с бэкенд API)
   const handleTogglePipelineStatus = async (pipeId) => {
-    setPipelines(prev => {
-      const updated = prev.map(p => {
-        if (p.id === pipeId) {
-          const nextStatus = p.status === 'active' ? 'paused' : 'active';
-          return { ...p, status: nextStatus };
-        }
-        return p;
-      });
-      savePipelines(updated);
-      return updated;
-    });
-
     try {
-      await fetch(`${API_BASE}/api/pipelines/${pipeId}/status`, { method: "PATCH" });
-    } catch (err) {}
+      await requestJson(`${API_BASE}/api/pipelines/${pipeId}/status`, { method: "PATCH" });
+      await fetchBackendPipelines();
+    } catch (err) { setBackendError(err.message); }
   };
 
   const handleRunPipeline = async (pipeId) => {
     const pipe = pipelines.find(p => p.id === pipeId);
     setAiProgressMessage(`Запуск пайплайна «${pipe?.name || ''}»...`);
     try {
-      await fetch(`${API_BASE}/api/pipelines/${pipeId}/run`, { method: "POST" });
-    } catch (err) {}
-    handleAiHunt();
+      await requestJson(`${API_BASE}/api/pipelines/${pipeId}/run`, { method: "POST" });
+      await fetchBackendPipelines();
+      await handleAiHunt();
+    } catch (err) { setBackendError(err.message); }
   };
 
   const handleDeletePipeline = async (pipeId) => {
     if (confirm("Вы уверены, что хотите удалить эту стратегию поиска?")) {
-      setPipelines(prev => {
-        const updated = prev.filter(p => p.id !== pipeId);
-        savePipelines(updated);
-        return updated;
-      });
-
       try {
-        await fetch(`${API_BASE}/api/pipelines/${pipeId}`, { method: "DELETE" });
-      } catch (err) {}
+        await requestJson(`${API_BASE}/api/pipelines/${pipeId}`, { method: "DELETE" });
+        await fetchBackendPipelines();
+      } catch (err) { setBackendError(err.message); }
     }
   };
 
   const handleDuplicatePipeline = async (pipeId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/pipelines/${pipeId}/duplicate`, { method: "POST" });
-      if (res.ok) {
-        const copy = await res.json();
-        setPipelines(prev => {
-          const updated = [copy, ...prev];
-          savePipelines(updated);
-          return updated;
-        });
-      }
-    } catch (err) {}
+      await requestJson(`${API_BASE}/api/pipelines/${pipeId}/duplicate`, { method: "POST" });
+      await fetchBackendPipelines();
+    } catch (err) { setBackendError(err.message); }
   };
 
   const handleSaveNewPipeline = async (newPipe) => {
-    setPipelines(prev => {
-      const updated = [newPipe, ...prev];
-      savePipelines(updated);
-      return updated;
-    });
-
     try {
-      await fetch(`${API_BASE}/api/pipelines`, {
+      await requestJson(`${API_BASE}/api/pipelines`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPipe)
       });
-    } catch (err) {}
+      await fetchBackendPipelines();
+    } catch (err) { setBackendError(err.message); return; }
 
     setAiProgressMessage(`Пайплайн «${newPipe.name}» успешно создан и сохранен в БД!`);
     setTimeout(() => setAiProgressMessage(''), 6000);

@@ -15,8 +15,7 @@ export function startScheduler(intervalMs = 60 * 60 * 1000) {
 
   schedulerInterval = setInterval(async () => {
     try {
-      await db.reload();
-      const pipelines = db.getAllPipelines();
+      const pipelines = await db.getAllPipelines();
       const activePipelines = pipelines.filter(p => p.status === 'active');
 
       if (activePipelines.length > 0) {
@@ -26,7 +25,7 @@ export function startScheduler(intervalMs = 60 * 60 * 1000) {
         });
 
         // Запуск поиска заказов в фоне
-        await executeAiHunt({ limit: 3 });
+        await executeAiHunt({ limit: 3, maxRounds: 1 });
 
         // Обновление даты последнего запуска пайплайнов
         const now = new Date().toISOString().replace('T', ' ').slice(0, 16);

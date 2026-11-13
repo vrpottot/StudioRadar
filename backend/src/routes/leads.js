@@ -14,10 +14,12 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/leads/:id
-router.get('/:id', (req, res) => {
-  const lead = getLeadById(req.params.id);
-  if (!lead) return res.status(404).json({ error: 'Лид не найден' });
-  res.json(lead);
+router.get('/:id', async (req, res) => {
+  try {
+    const lead = await getLeadById(req.params.id);
+    if (!lead) return res.status(404).json({ error: 'Лид не найден' });
+    res.json(lead);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // PATCH /api/leads/:id/status

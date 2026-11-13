@@ -59,6 +59,7 @@ export function extractRubBudget(text = '') {
   return null;
 }
 export function isBannedLead(lead) {
+  if (lead?.qualification_status === 'rejected') return true;
   if (!lead || !sourcePlatform(lead.url) || isExcludedUrl(lead.url) || (lead.apply_url && isExcludedUrl(lead.apply_url))) return true;
   if (hasTenderIntent(`${lead.title || ''} ${lead.request_text || ''}`)) return true;
   if (sourcePlatform(lead.url) === 'telegram') {

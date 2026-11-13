@@ -12,11 +12,11 @@ export default function SourcesView({ onFullScan, isScanningAll, isAiHunting }) 
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     <div>
       <h2 style={{ fontSize: 22, fontWeight: 700 }}>Источники прямых заказов</h2>
-      <p style={{ marginTop: 8, color: 'var(--color-text-headline)' }}>Россия и СНГ · все настроенные отрасли · без фриланс-бирж и тендеров</p>
+      <p style={{ marginTop: 8, color: 'var(--color-text-headline)' }}>Весь мир, включая Россию и СНГ · все настроенные отрасли · без фриланс-бирж и тендеров</p>
     </div>
     <div className="card" style={{ padding: 20 }}>
       <p style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Globe size={18} /> Поиск через Exa и Tavily по открытым публикациям</p>
-      <p style={{ marginTop: 10, lineHeight: 1.6, color: 'var(--color-text-headline)' }}>Проверяем явный запрос на подряд, отрасль, страну и актуальность за последние 30 дней. Закрытые группы, переписки и страницы за авторизацией недоступны. Без подтверждающего текста заказ не добавляется.</p>
+      <p style={{ marginTop: 10, lineHeight: 1.6, color: 'var(--color-text-headline)' }}>Проверяем явный запрос на подряд, отрасль, страну и публикацию за последние 90 дней. Добавляем только открытые заказы. Закрытые группы, переписки и страницы за авторизацией недоступны. Без подтверждающего текста заказ не добавляется.</p>
       <button className="btn btn-primary" onClick={onFullScan} disabled={busy} style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
         {busy ? <Search size={16} /> : <Play size={16} />}{busy ? 'Поиск выполняется…' : 'Искать во всех источниках'}
       </button>

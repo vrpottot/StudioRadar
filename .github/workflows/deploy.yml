@@ -26,20 +26,21 @@ jobs:
           npm ci --prefix backend --omit=dev
           npm ci --prefix ai --omit=dev
           npm test --prefix ai
+          npm test --prefix backend
           npm ci --prefix frontend
           npm run build --prefix frontend
           bash -n scripts/deploy.sh
 
       - name: Package deployment without live data or secrets
         run: |
-          mkdir -p staging/backend staging/frontend staging/ai staging/bootstrap
+          mkdir -p staging/backend staging/frontend staging/ai
           cp -r backend/src staging/backend/
+          cp -r backend/scripts staging/backend/
           cp backend/package.json backend/package-lock.json staging/backend/
-          cp backend/leads.json backend/pipelines.json backend/settings.json staging/bootstrap/
           cp ai/*.js ai/package.json ai/package-lock.json staging/ai/
           cp -r frontend/dist staging/frontend/
           cp scripts/deploy.sh staging/deploy.sh
-          tar -czf deploy.tar.gz -C staging backend frontend ai bootstrap deploy.sh
+          tar -czf deploy.tar.gz -C staging backend frontend ai deploy.sh
 
       - name: Upload bundle via SCP
         uses: appleboy/scp-action@v0.1.7

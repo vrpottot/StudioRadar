@@ -30,10 +30,10 @@ router.use('/api/settings', settingsRouter);
 // Alias: POST /api/scan (Сквозной сбор по всем источникам)
 router.post('/api/scan', async (req, res) => {
   try {
-    const result = await executeAiHunt({ limit: 5 });
+    const result = await executeAiHunt({ limit: 10 });
     res.json(result);
   } catch (err) {
-    res.status(err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message) });
+    res.status(err.code === 'HUNT_RUNNING' ? 409 : err.code === 'AI_PROVIDER_ERROR' ? 503 : 500).json({ success: false, code: err.code || 'HUNT_FAILED', error: safeErrorMessage(err.message), retryable: Boolean(err.retryable), partial_result: err.partial_result });
   }
 });
 

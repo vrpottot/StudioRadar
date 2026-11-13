@@ -2,7 +2,6 @@ import { db } from '../db/index.js';
 import { broadcast } from '../ws/index.js';
 
 export async function getAllPipelines() {
-  await db.reload();
   return db.getAllPipelines();
 }
 
@@ -49,7 +48,7 @@ export async function duplicatePipeline(id) {
 }
 
 export async function runPipeline(id) {
-  const pipe = db.getPipelineById(id);
+  const pipe = await db.getPipelineById(id);
   if (!pipe) return null;
 
   broadcast({ type: 'ai_progress', message: `Запуск мониторинга по стратегии: «${pipe.name}»...` });

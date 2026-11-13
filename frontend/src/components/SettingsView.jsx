@@ -9,8 +9,7 @@ import {
   Trash2,
   Plus,
   Bot,
-  Globe,
-  Key
+  Globe
 } from 'lucide-react';
 import { TARGET_INDUSTRIES, TARGET_SERVICES } from '../data/leadsData';
 
@@ -27,11 +26,6 @@ export default function SettingsView() {
   const [isChecking, setIsChecking] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Конфигурация ИИ
-  const [aiProvider, setAiProvider] = useState('autonomous');
-  const [geminiApiKey, setGeminiApiKey] = useState('');
-  const [openrouterApiKey, setOpenrouterApiKey] = useState('');
 
   const [staffStopWords, setStaffStopWords] = useState([
     "в штат", "полная ставка", "junior", "стажер", "оклад", "курьер", "офис-менеджер"
@@ -58,9 +52,6 @@ export default function SettingsView() {
           if (data.staff_stop_words) setStaffStopWords(data.staff_stop_words);
           if (data.cheap_stop_words) setCheapStopWords(data.cheap_stop_words);
           if (data.education_stop_words) setEducationStopWords(data.education_stop_words);
-          if (data.ai_provider) setAiProvider(data.ai_provider);
-          if (data.gemini_api_key) setGeminiApiKey(data.gemini_api_key);
-          if (data.openrouter_api_key) setOpenrouterApiKey(data.openrouter_api_key);
         }
       } catch (e) {
         console.warn("Ошибка загрузки настроек:", e.message);
@@ -82,9 +73,7 @@ export default function SettingsView() {
         staff_stop_words: staffStopWords,
         cheap_stop_words: cheapStopWords,
         education_stop_words: educationStopWords,
-        ai_provider: aiProvider,
-        ...(geminiApiKey.trim() ? { gemini_api_key: geminiApiKey.trim() } : {}),
-        ...(openrouterApiKey.trim() ? { openrouter_api_key: openrouterApiKey.trim() } : {})
+        ai_provider: 'gemini'
       };
 
       const res = await fetch(`${API_BASE}/api/settings`, {
@@ -140,7 +129,7 @@ export default function SettingsView() {
 
       {saveError && <div role="alert" style={{ color: '#b42318' }}>{saveError}</div>}
       <div className="card" style={{ padding: 16 }}>
-        <p>Exa и Tavily ищут страницы. Gemini или OpenRouter проверяет, является ли публикация заказом. Для этого нужен действующий ключ AI-провайдера.</p>
+        <p>Exa и Tavily ищут страницы. Google Gemini проверяет, является ли публикация заказом. Для этого нужен действующий ключ Gemini.</p>
         <button className="btn btn-outline" disabled={isChecking} onClick={handleCheckAi} style={{ marginTop: 12 }}>Проверить подключение AI</button>
         <p style={{ marginTop: 8 }}>Сначала сохраните настройки. Проверка выполняет небольшой запрос к выбранному AI-провайдеру.</p>
         {aiCheck && <p role="status" style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{aiCheck}</p>}
@@ -156,75 +145,25 @@ export default function SettingsView() {
               Режим работы ИИ и Автономного поиска в интернете
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--color-text-headline)' }}>
-              StudioRadar автономно ищет стартапы, тендеры и контакты ЛПР в открытом вебе
+              StudioRadar ищет прямые проектные заказы компаний по всему миру, включая Россию и СНГ
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div>
-            <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-black)', marginBottom: '6px', display: 'block' }}>
-              Основной движок ИИ-анализа:
-            </label>
-            <select 
-              value={aiProvider} 
-              onChange={(e) => setAiProvider(e.target.value)}
-              className="input-control"
-              style={{ width: '100%', padding: '8px 12px', fontSize: '13px' }}
-            >
-              <option value="autonomous">Автоматически: Gemini → OpenRouter (нужен ключ AI-провайдера)</option>
-              <option value="gemini">Google Gemini (для квалификации найденных заказов)</option>
-              <option value="openrouter">OpenRouter API (DeepSeek / Claude 3.5 / GPT-4o)</option>
-            </select>
-          </div>
-
-          {aiProvider === 'gemini' && (
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-black)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Key size={13} />
-                <span>Google AI Studio API Key (начинается с AIzaSy...):</span>
-              </label>
-              <input 
-                type="password"
-                placeholder="AIzaSy..."
-                value={geminiApiKey}
-                onChange={(e) => setGeminiApiKey(e.target.value)}
-                className="input-control"
-                style={{ width: '100%', padding: '8px 12px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}
-              />
-              <span style={{ fontSize: '11px', color: 'var(--color-text-headline)', marginTop: '4px', display: 'block' }}>
-                Ключ можно бесплатно получить на <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent-purple)', textDecoration: 'underline' }}>aistudio.google.com</a> (до 15 запросов в минуту бесплатно).
-              </span>
-            </div>
-          )}
-
-          {aiProvider === 'openrouter' && (
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-black)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Key size={13} />
-                <span>OpenRouter API Key (sk-or-...):</span>
-              </label>
-              <input 
-                type="password"
-                placeholder="sk-or-v1-..."
-                value={openrouterApiKey}
-                onChange={(e) => setOpenrouterApiKey(e.target.value)}
-                className="input-control"
-                style={{ width: '100%', padding: '8px 12px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}
-              />
-            </div>
-          )}
+          <p>Движок ИИ-анализа: Google Gemini</p>
+          <p>Ключи Gemini, Exa и Tavily задаются в переменных окружения сервера. Они не хранятся в настройках базы данных.</p>
 
           <div style={{ background: '#fff', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '12px', fontSize: '12px', color: 'var(--color-text-body)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: 'var(--color-text-black)', marginBottom: '4px' }}>
               <Globe size={14} color="var(--color-accent-purple)" />
-              <span>Источники открытого интернета (работают без внешних API):</span>
+              <span>Публичные источники поиска через Exa и Tavily:</span>
             </div>
             <ul style={{ paddingLeft: '18px', margin: '4px 0 0 0', lineHeight: 1.6 }}>
-              <li><strong>ProductRadar.ru</strong> — свежие технологические стартапы и MVP в РФ/СНГ с официальными сайтами и контактами основателей.</li>
-              <li><strong>RB.ru (Rusbase)</strong> — компании с новыми раундами инвестиций и маркетинговыми бюджетами.</li>
-              <li><strong>ЕИС Закупки</strong> — прямые открытые тендеры на 3D графику, видеоролики, моушн и анимацию.</li>
-              <li><strong>Автономный веб-краулер</strong> — переход на сайт каждого заказчика, извлечение прямых телефонов, email и Telegram ЛПР.</li>
+              <li><strong>HH</strong> — запросы компаний на студию или команду для проектного подряда.</li>
+              <li><strong>Telegram</strong> — публичные заказы с подтверждённым бюджетом проекта от 900 000 ₽.</li>
+              <li><strong>LinkedIn и Facebook</strong> — публичные публикации компаний о поиске подрядчика.</li>
+              <li>Штатный найм, фриланс-биржи и тендеры исключаются.</li>
             </ul>
           </div>
         </div>

@@ -7,8 +7,7 @@ const router = Router();
 // GET /api/settings
 router.get('/', async (req, res) => {
   try {
-    await db.reload();
-    res.json(db.getSettings());
+    res.json(await db.getSettings());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

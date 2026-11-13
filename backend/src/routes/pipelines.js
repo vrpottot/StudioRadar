@@ -23,10 +23,12 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/pipelines/:id
-router.get('/:id', (req, res) => {
-  const pipe = getPipelineById(req.params.id);
-  if (!pipe) return res.status(404).json({ error: 'Пайплайн не найден' });
-  res.json(pipe);
+router.get('/:id', async (req, res) => {
+  try {
+    const pipe = await getPipelineById(req.params.id);
+    if (!pipe) return res.status(404).json({ error: 'Пайплайн не найден' });
+    res.json(pipe);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // POST /api/pipelines

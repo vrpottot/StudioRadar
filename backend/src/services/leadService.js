@@ -2,9 +2,8 @@ import { db } from '../db/index.js';
 import { broadcast } from '../ws/index.js';
 
 export async function getLeads(filters = {}) {
-  await db.reload();
   const { industry, service, status, only_with_phone, query } = filters;
-  let leads = db.getAllLeads();
+  let leads = await db.getAllLeads();
 
   if (industry && industry !== 'Все 7 сфер' && industry !== 'Все сферы') {
     leads = leads.filter(l => l.industry === industry);
@@ -58,6 +57,5 @@ export async function updateLeadNotes(id, notes) {
 }
 
 export async function getStats() {
-  await db.reload();
   return db.getStats();
 }

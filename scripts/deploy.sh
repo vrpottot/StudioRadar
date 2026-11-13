@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install dependencies before stopping the service; preserve runtime JSON and .env.
+# Install dependencies and check Supabase before stopping the service.
 set -Eeuo pipefail
 umask 077
 release=$(realpath "$1")
@@ -28,20 +28,23 @@ trap finish EXIT
 (cd "$release/backend" && npm ci --omit=dev)
 (cd "$release/ai" && npm ci --omit=dev)
 
+# Existing server must have its own PostgreSQL DATABASE_URL; never ship secrets.
+STUDIORADAR_ENV_FILE="$app/backend/.env" node "$release/backend/scripts/check-db.js"
+
 systemctl stop studioradar
 service_stopped=1
 # Existing code, dependencies, keys and runtime data can all be restored together.
 tar -czf "$backup" -C "$app" backend ai frontend
 backup_ready=1
 
+# Any remaining legacy server data is imported and checked while writers are stopped.
+if [ -f "$app/backend/leads.json" ] || [ -f "$app/backend/pipelines.json" ] || [ -f "$app/backend/settings.json" ]; then
+  STUDIORADAR_ENV_FILE="$app/backend/.env" node "$release/backend/scripts/migrate-json.js" --source-dir "$app/backend" --remove-files
+fi
+
 cp -a "$release/backend/." "$app/backend/"
 cp -a "$release/ai/." "$app/ai/"
 cp -a "$release/frontend/." "$app/frontend/"
-for name in leads pipelines settings; do
-  if [ ! -f "$app/backend/$name.json" ]; then
-    cp "$release/bootstrap/$name.json" "$app/backend/$name.json"
-  fi
-done
 # .env remains the server's configuration. Never write provider keys from source code.
 nginx -t
 systemctl restart studioradar
